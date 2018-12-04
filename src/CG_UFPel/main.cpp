@@ -16,11 +16,16 @@
 #include <iostream>
 #include <string>
 
-
+// Original functions of the project
 void framebuffer_size_callback(GLFWwindow* window, int width, int height);
 void mouse_callback(GLFWwindow* window, double xpos, double ypos);
 void scroll_callback(GLFWwindow* window, double xoffset, double yoffset);
 void processInput(GLFWwindow *window);
+
+
+// My Functions
+void allocate_planets();
+
 
 // settings
 const unsigned int SCR_WIDTH = 800;
@@ -36,8 +41,14 @@ bool firstMouse = true;
 float deltaTime = 0.0f;
 float lastFrame = 0.0f;
 
-int main()
-{
+typedef struct{
+    vector<tuple<Planet, Model>> planet;
+    int qt;
+}Planets;
+
+Planets planets;
+
+int main(){
     // glfw: initialize and configure
     // ------------------------------
     glfwInit();
@@ -45,9 +56,9 @@ int main()
     glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
     glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
 
-#ifdef __APPLE__
+    #ifdef __APPLE__
     glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GL_TRUE); // uncomment this statement to fix compilation on OS X
-#endif
+    #endif
 
     // glfw window creation
     // --------------------
@@ -84,19 +95,25 @@ int main()
 
     // load models
     // -----------
-    Model ourModel(FileSystem::getPath("resources/objects/nanosuit/nanosuit.obj"));
+    Model mercury(FileSystem::getPath("resources/objects/Planets/mercury/mercury.obj"));
+    //Model venus(FileSystem::getPath("resources/objects/Planets/venus/venus.obj"));
+    Model earth(FileSystem::getPath("resources/objects/Planets/earth/earth.obj"));
+    //Model mars(FileSystem::getPath("resources/objects/Planets/mars/mars.obj"));
+    //Model jupiter(FileSystem::getPath("resources/objects/Planets/jupiter/jupiter.obj"));
+    //Model saturn(FileSystem::getPath("resources/objects/Planets/saturn/saturn.obj"));
+    //Model uranus(FileSystem::getPath("resources/objects/Planets/uranus/uranus.obj"));
+    //Model neptune(FileSystem::getPath("resources/objects/Planets/neptune/neptune.obj"));
 
-    //Sun sun("Sun");
-    //Planet planet("Mercury");
+    Planet planet("Mercury", 0.2f, 3650.0f, 10.0f, 2.0f);
 
     
     // draw in wireframe
     //glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
 
+    float begin = glfwGetTime();
     // render loop
     // -----------
-    while (!glfwWindowShouldClose(window))
-    {
+    while (!glfwWindowShouldClose(window)){
         // per-frame time logic
         // --------------------
         float currentFrame = glfwGetTime();
@@ -121,13 +138,37 @@ int main()
         ourShader.setMat4("projection", projection);
         ourShader.setMat4("view", view);
 
-        // render the loaded model
-        glm::mat4 model;
-        model = glm::translate(model, glm::vec3(0.0f, -1.75f, 0.0f)); // translate it down so it's at the center of the scene
-        model = glm::scale(model, glm::vec3(0.2f, 0.2f, 0.2f));	// it's a bit too big for our scene, so scale it down
-        ourShader.setMat4("model", model);
-        ourModel.Draw(ourShader);
+        ourShader.setMat4("model", planet.render(currentFrame - begin));
+        earth.Draw(ourShader);
 
+        /*
+        model = glm::translate(model, glm::vec3(10.0f, 0.0f, 0.0f)); // translate it down so it's at the center of the scene
+        ourShader.setMat4("model", model);
+        venus.Draw(ourShader);
+
+        model = glm::translate(model, glm::vec3(10.0f, 0.0f, 0.0f)); // translate it down so it's at the center of the scene
+        ourShader.setMat4("model", model);
+        earth.Draw(ourShader);
+
+        model = glm::translate(model, glm::vec3(10.0f, 0.0f, 0.0f)); // translate it down so it's at the center of the scene
+        ourShader.setMat4("model", model);
+        mars.Draw(ourShader);
+
+        model = glm::translate(model, glm::vec3(10.0f, 0.0f, 0.0f)); // translate it down so it's at the center of the scene
+        ourShader.setMat4("model", model);
+        jupiter.Draw(ourShader);
+
+        model = glm::translate(model, glm::vec3(10.0f, 0.0f, 0.0f)); // translate it down so it's at the center of the scene
+        ourShader.setMat4("model", model);
+        saturn.Draw(ourShader);
+
+        model = glm::translate(model, glm::vec3(10.0f, 0.0f, 0.0f)); // translate it down so it's at the center of the scene
+        ourShader.setMat4("model", model);
+        uranus.Draw(ourShader);
+
+        model = glm::translate(model, glm::vec3(10.0f, 0.0f, 0.0f)); // translate it down so it's at the center of the scene
+        ourShader.setMat4("model", model);
+        neptune.Draw(ourShader); */
 
         // glfw: swap buffers and poll IO events (keys pressed/released, mouse moved etc.)
         // -------------------------------------------------------------------------------
@@ -143,8 +184,7 @@ int main()
 
 // process all input: query GLFW whether relevant keys are pressed/released this frame and react accordingly
 // ---------------------------------------------------------------------------------------------------------
-void processInput(GLFWwindow *window)
-{
+void processInput(GLFWwindow *window){
     if (glfwGetKey(window, GLFW_KEY_ESCAPE) == GLFW_PRESS)
         glfwSetWindowShouldClose(window, true);
 
@@ -160,8 +200,7 @@ void processInput(GLFWwindow *window)
 
 // glfw: whenever the window size changed (by OS or user resize) this callback function executes
 // ---------------------------------------------------------------------------------------------
-void framebuffer_size_callback(GLFWwindow* window, int width, int height)
-{
+void framebuffer_size_callback(GLFWwindow* window, int width, int height){
     // make sure the viewport matches the new window dimensions; note that width and 
     // height will be significantly larger than specified on retina displays.
     glViewport(0, 0, width, height);
@@ -169,8 +208,7 @@ void framebuffer_size_callback(GLFWwindow* window, int width, int height)
 
 // glfw: whenever the mouse moves, this callback is called
 // -------------------------------------------------------
-void mouse_callback(GLFWwindow* window, double xpos, double ypos)
-{
+void mouse_callback(GLFWwindow* window, double xpos, double ypos){
     if (firstMouse)
     {
         lastX = xpos;
@@ -189,7 +227,58 @@ void mouse_callback(GLFWwindow* window, double xpos, double ypos)
 
 // glfw: whenever the mouse scroll wheel scrolls, this callback is called
 // ----------------------------------------------------------------------
-void scroll_callback(GLFWwindow* window, double xoffset, double yoffset)
-{
+void scroll_callback(GLFWwindow* window, double xoffset, double yoffset){
+    
     camera.ProcessMouseScroll(yoffset);
+}
+
+void allocate_planets(){
+    // Mercury
+    Model mercury(FileSystem::getPath("resources/objects/Planets/mercury/mercury.obj"));
+    Planet planet_mercury("Mercury", 4879, 0.24, 58.646, 0.387098);
+    planets.planet.push_back(tuple<Planet, Model>(planet_mercury, mercury));
+    planets.qt++;
+
+    // Venus
+    Model venus(FileSystem::getPath("resources/objects/Planets/venus/venus.obj"));
+    Planet planet_venus("Venus", 12103, 0.61, -243.021, 0.72332);
+    planets.planet.push_back(tuple<Planet, Model>(planet_venus, venus));
+    planets.qt++;
+
+    // Earth
+    Model earth(FileSystem::getPath("resources/objects/Planets/earth/earth.obj"));
+    Planet planet_earth("Earth", 12756, 1, 1, 1);
+    planets.planet.push_back(tuple<Planet, Model>(planet_earth, earth));
+    planets.qt++;
+
+    // Mars
+    Model mars(FileSystem::getPath("resources/objects/Planets/mars/mars.obj"));
+    Planet planet_mars("Mars", 6792, 1.88, 1.025, 1.523679);
+    planets.planet.push_back(tuple<Planet, Model>(planet_mars, mars));
+    planets.qt++;
+
+    // Jupiter
+    Model jupiter(FileSystem::getPath("resources/objects/Planets/jupiter/jupiter.obj"));
+    Planet planet_jupiter("Jupiter", 142984, 11.86, 0.4, 5.204267);
+    planets.planet.push_back(tuple<Planet, Model>(planet_jupiter, jupiter));
+    planets.qt++;
+
+    // Saturn
+    Model saturn(FileSystem::getPath("resources/objects/Planets/saturn/saturn.obj"));
+    Planet planet_saturn("Saturn", 120573, 29.45, 0.43, 9.582017);
+    planets.planet.push_back(tuple<Planet, Model>(planet_saturn, saturn));
+    planets.qt++;
+
+    // Uranus
+    Model uranus(FileSystem::getPath("resources/objects/Planets/uranus/uranus.obj"));
+    Planet planet_uranus("Uranus", 51118, 84.32, 0.71, 19.22941);
+    planets.planet.push_back(tuple<Planet, Model>(planet_uranus, uranus));
+    planets.qt++;
+
+    // Neptune
+    Model neptune(FileSystem::getPath("resources/objects/Planets/neptune/neptune.obj"));
+    Planet planet_neptune("Neptune", 49528, 164.79, 0.69, 30.03661);
+    planets.planet.push_back(tuple<Planet, Model>(planet_neptune, neptune));
+    planets.qt++;
+
 }
