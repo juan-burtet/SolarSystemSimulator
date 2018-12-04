@@ -10,7 +10,12 @@
 #include <learnopengl/camera.h>
 #include <learnopengl/model.h>
 
+#include <solarsystem/sun.h>
+#include <solarsystem/planet.h>
+
 #include <iostream>
+#include <string>
+
 
 void framebuffer_size_callback(GLFWwindow* window, int width, int height);
 void mouse_callback(GLFWwindow* window, double xpos, double ypos);
@@ -80,6 +85,9 @@ int main()
     // load models
     // -----------
     Model ourModel(FileSystem::getPath("resources/objects/nanosuit/nanosuit.obj"));
+
+    //Sun sun("Sun");
+    //Planet planet("Mercury");
 
     
     // draw in wireframe
