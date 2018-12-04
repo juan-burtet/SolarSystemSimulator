@@ -5,10 +5,10 @@
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtc/type_ptr.hpp>
 
-#include <./learnopengl/filesystem.h>
-#include <./learnopengl/shader_m.h>
-#include <./learnopengl/camera.h>
-#include <./learnopengl/model.h>
+#include <learnopengl/filesystem.h>
+#include <learnopengl/shader_m.h>
+#include <learnopengl/camera.h>
+#include <learnopengl/model.h>
 
 #include <iostream>
 #include <string>
@@ -19,27 +19,26 @@ using namespace std;
 class Sun {
 	protected:
 		string Name; 
-		//Model *Model;
-		glm::vec3 Position;
-		glm::vec3 Scale;
+		float Scale;
       
    public:
-      Sun(string name, glm::vec3 position, glm::vec3 scale){
+      Sun(string name, float scale){
          Name = name;
-         //Model = model;
-         Position = position;
          Scale = scale;
       }//Sun
+
+      glm::mat4 render(){
+      	glm::mat4 matrix;
+      	matrix = glm::translate(matrix, glm::vec3(0.0f, 0.0f, 0.0f));
+      	matrix = glm::scale(matrix, Scale * glm::vec3(1.0f, 1.0f, 1.0f));
+      	return matrix;
+      }
 
       string getName(){
       	return Name;
       }
 
-      glm::vec3 getPosition(){
-      	return Position;
-      }
-
-      glm::vec3 getScale(){
+      float getScale(){
       	return Scale;
       }
 };
