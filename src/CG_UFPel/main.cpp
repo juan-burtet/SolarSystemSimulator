@@ -12,6 +12,7 @@
 
 #include <solarsystem/sun.h>
 #include <solarsystem/planet.h>
+#include <solarsystem/moon.h>
 
 #include <iostream>
 #include <string>
@@ -23,11 +24,17 @@ void scroll_callback(GLFWwindow* window, double xoffset, double yoffset);
 void processInput(GLFWwindow *window);
 
 
-// My Functions
-void allocate_planets();
-void render_sun(Shader *ourShader, Sun *sun, Model *model);
-void render_planets(Shader *ourShader);
+// Funções de Alocação de Modelos
+void allocate_sun(); // Sol
+void allocate_planets(); // Planetas
+void allocate_moons(); // Luas
+void allocate_ship(); // Nave
 
+// Funções de renderização de Modelos
+void render_sun(Shader *ourShader); // Sol
+void render_planets(Shader *ourShader); // Planetas
+void render_moons(Shader *ourShader); // Luas
+void redner_ship(); // Nave
 
 // settings
 const unsigned int SCR_WIDTH = 800;
@@ -43,12 +50,39 @@ bool firstMouse = true;
 float deltaTime = 0.0f;
 float lastFrame = 0.0f;
 
+// struct do Sol
+typedef struct{
+    vector<tuple<Sun, Model>> sun;
+    int qt;
+}Stars;
+Stars star;
+
+// struct dos planetas
 typedef struct{
     vector<tuple<Planet, Model>> planet;
     int qt;
 }Planets;
-
 Planets planets;
+
+// struct das luas
+typedef struct{
+    vector<tuple<Moon, int>> moon;
+    vector<Model> models;
+    int qt_moons;
+    int qt_models;
+}Moons;
+Moons moons;
+
+// Struct da nave
+typedef struct{
+    vector<tuple<Model, glm::mat4>> ship;
+    int qt;
+}Ship;
+Ship ship;
+
+// Modo de câmera
+int mode;
+
 
 int main(){
     // glfw: initialize and configure
@@ -95,14 +129,17 @@ int main(){
     // -------------------------
     Shader ourShader(FileSystem::getPath("resources/cg_ufpel.vs").c_str(), FileSystem::getPath("resources/cg_ufpel.fs").c_str());
 
-    // Sol
-    Model model_sun(FileSystem::getPath("resources/objects/Sun/sun.obj"));
-    Sun sun("Sun", 12756 * 20); // 109 vezes o tamanho da Terra
+    Model falcon(FileSystem::getPath("resources/objects/Stars/stars.obj"));
 
+
+
+    // Aloca o sol
+    allocate_sun();
     // Aloca os planetas
     allocate_planets();
 
-    float begin = glfwGetTime();
+    
+    mode = 1;
     // render loop
     // -----------
     while (!glfwWindowShouldClose(window)){
@@ -125,21 +162,27 @@ int main(){
         ourShader.use();
 
         // view/projection transformations
-        glm::mat4 projection = glm::perspective(glm::radians(camera.Zoom), (float)SCR_WIDTH / (float)SCR_HEIGHT, 0.1f, 100.0f);
+        glm::mat4 projection = glm::perspective(glm::radians(camera.Zoom), (float)SCR_WIDTH / (float)SCR_HEIGHT, 0.1f, 1000.0f);
         glm::mat4 view = camera.GetViewMatrix();
         ourShader.setMat4("projection", projection);
         ourShader.setMat4("view", view);
 
-        //render_sun(&ourShader, &sun, &model_sun);
+        switch(mode){
+            case 1:break;
+            case 2:break;
+            case 3:break;
+        }
+
+
+        glm::mat4 matrix;
+        matrix = glm::translate(matrix, glm::vec3(0.0f, 0.0f, 0.0f));
+        //matrix = glm::rotate(matrix, glm::radians(90.0f), glm::vec3(1.0f, 0.0f, 0.0f));
+        matrix = glm::scale(matrix, 100.0f * glm::vec3(1.0f, 1.0f, 1.0f));
+        ourShader.setMat4("model", matrix);
+        falcon.Draw(ourShader);
+        
+        render_sun(&ourShader);
         render_planets(&ourShader);
-
-        float x = (currentFrame - begin)/ 5.0f;
-        glm::mat4 oi;
-        oi = glm::rotate(oi, glm::radians(360.0f)*x, glm::vec3(0.0f, 1.0f, 0.0f));
-        ourShader.setMat4("model", oi);
-        model_sun.Draw(ourShader);
-
-
 
         // glfw: swap buffers and poll IO events (keys pressed/released, mouse moved etc.)
         // -------------------------------------------------------------------------------
@@ -232,18 +275,30 @@ void scroll_callback(GLFWwindow* window, double xoffset, double yoffset){
     camera.ProcessMouseScroll(yoffset);
 }
 
+// Aloca o Sol
+void allocate_sun(){
+    star.qt = 0;
+
+    // Sol
+    Model model_sun(FileSystem::getPath("resources/objects/Sun/sun.obj"));
+    Sun sun("Sun", 150000); // 109 vezes o tamanho da Terra
+    star.sun.push_back(tuple<Sun, Model>(sun, model_sun));
+    star.qt++;
+}//alocate_sun
+
+// Aloca os planetas
 void allocate_planets(){
     planets.qt = 0;
 
     // Mercury
     Model mercury(FileSystem::getPath("resources/objects/Planets/mercury/mercury.obj"));
-    Planet planet_mercury("Mercury", 4879, 0.24, 58.646, 0.387098);
+    Planet planet_mercury("Mercury", 4879, 0.24, 58.646, 0.5);
     planets.planet.push_back(tuple<Planet, Model>(planet_mercury, mercury));
     planets.qt++;
 
     // Venus
     Model venus(FileSystem::getPath("resources/objects/Planets/venus/venus.obj"));
-    Planet planet_venus("Venus", 12103, 0.61, -243.021, 0.72332);
+    Planet planet_venus("Venus", 12103, 0.61, -243.021, 0.75);
     planets.planet.push_back(tuple<Planet, Model>(planet_venus, venus));
     planets.qt++;
 
@@ -255,40 +310,76 @@ void allocate_planets(){
 
     // Mars
     Model mars(FileSystem::getPath("resources/objects/Planets/mars/mars.obj"));
-    Planet planet_mars("Mars", 6792, 1.88, 1.025, 1.523679);
+    Planet planet_mars("Mars", 6792, 1.88, 1.025, 1.25);
     planets.planet.push_back(tuple<Planet, Model>(planet_mars, mars));
     planets.qt++;
 
     // Jupiter
     Model jupiter(FileSystem::getPath("resources/objects/Planets/jupiter/jupiter.obj"));
-    Planet planet_jupiter("Jupiter", 142984, 11.86, 4, 5.204267);
+    Planet planet_jupiter("Jupiter", 142984, 11.86, 4, 1.75);
     planets.planet.push_back(tuple<Planet, Model>(planet_jupiter, jupiter));
     planets.qt++;
 
     // Saturn
     Model saturn(FileSystem::getPath("resources/objects/Planets/saturn/saturn.obj"));
-    Planet planet_saturn("Saturn", 120573, 29.45, 0.43, 9.582017);
+    Planet planet_saturn("Saturn", 120573, 29.45, 0.43, 2.6);
     planets.planet.push_back(tuple<Planet, Model>(planet_saturn, saturn));
     planets.qt++;
 
     // Uranus
     Model uranus(FileSystem::getPath("resources/objects/Planets/uranus/uranus.obj"));
-    Planet planet_uranus("Uranus", 51118, 84.32, 0.71, 19.22941);
+    Planet planet_uranus("Uranus", 51118, 84.32, 0.71, 3.2);
     planets.planet.push_back(tuple<Planet, Model>(planet_uranus, uranus));
     planets.qt++;
 
     // Neptune
     Model neptune(FileSystem::getPath("resources/objects/Planets/neptune/neptune.obj"));
-    Planet planet_neptune("Neptune", 49528, 164.79, 0.69, 30.03661);
+    Planet planet_neptune("Neptune", 49528, 164.79, 0.69, 3.6);
     planets.planet.push_back(tuple<Planet, Model>(planet_neptune, neptune));
     planets.qt++;
-}
+}// allocate_planets
 
-void render_sun(Shader *ourShader, Sun *sun, Model *model){
-    ourShader->setMat4("model", sun->render());
-    model->Draw(*ourShader);
+void allocate_moons(){
+    moons.qt_models = 0;
+    moons.qt_moons = 0;
+
+
+    // Terra
+    //  - Lua ("Lua", 1/4 * Terra)
+
+    // Marte
+    //  - Fobos
+    //  - Deimos
+
+    // Jupiter
+    //  - Ganimedes
+    //  - Calisto
+    //  - Io
+    //  - Europa
+
+    // Saturno
+    //  - Titã
+
+    // Urano
+    //  - Titânia
+    //  - Oberon
+    //  - Umbriel
+    //  - Ariel
+
+    // Netuno
+    //  - Tritão
+
+
+}//allocate_moons
+
+
+// Renderiza o Sol
+void render_sun(Shader *ourShader){
+    ourShader->setMat4("model", get<0>(star.sun[0]).render());
+    get<1>(star.sun[0]).Draw(*ourShader);
 }//render_sun
 
+// Renderiza os Planetas
 void render_planets(Shader *ourShader){
     for(int i = 0; i < planets.qt; i++){
         ourShader->setMat4("model", get<0>(planets.planet[i]).render(glfwGetTime()));
