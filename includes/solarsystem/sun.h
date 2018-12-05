@@ -20,27 +20,33 @@ class Sun {
 	protected:
 		string Name; 
 		float Scale;
+
       
-   public:
-      Sun(string name, float scale){
-         Name = name;
-         Scale = scale;
-      }//Sun
+  public:
+  	static float size; // size, para a escala do planeta
 
-      glm::mat4 render(){
-      	glm::mat4 matrix;
-      	matrix = glm::translate(matrix, glm::vec3(0.0f, 0.0f, 0.0f));
-      	matrix = glm::scale(matrix, Scale * glm::vec3(1.0f, 1.0f, 1.0f));
-      	return matrix;
-      }
+    Sun(string name, float scale){
+      Name = name;
+      Scale = scale;
+    }//Sun
 
-      string getName(){
-      	return Name;
-      }
+    glm::mat4 render(){
+     	glm::mat4 matrix;
+     	matrix = glm::translate(matrix, glm::vec3(0.0f, 0.0f, 0.0f));
+			matrix = glm::rotate(matrix, glm::radians(270.0f), glm::vec3(1.0f, 0.0f, 0.0f));
+     	matrix = glm::scale(matrix, (Scale * size) * glm::vec3(1.0f, 1.0f, 1.0f));
+     	return matrix;
+    }
 
-      float getScale(){
-      	return Scale;
-      }
+    string getName(){
+     	return Name;
+    }
+
+    float getScale(){
+     	return Scale;
+    }
 };
+
+float Sun::size = 0.000001;
 
 #endif

@@ -25,6 +25,8 @@ void processInput(GLFWwindow *window);
 
 // My Functions
 void allocate_planets();
+void render_sun(Shader *ourShader, Sun *sun, Model *model);
+void render_planets(Shader *ourShader);
 
 
 // settings
@@ -93,22 +95,12 @@ int main(){
     // -------------------------
     Shader ourShader(FileSystem::getPath("resources/cg_ufpel.vs").c_str(), FileSystem::getPath("resources/cg_ufpel.fs").c_str());
 
-    // load models
-    // -----------
-    Model mercury(FileSystem::getPath("resources/objects/Planets/mercury/mercury.obj"));
-    //Model venus(FileSystem::getPath("resources/objects/Planets/venus/venus.obj"));
-    Model earth(FileSystem::getPath("resources/objects/Planets/earth/earth.obj"));
-    //Model mars(FileSystem::getPath("resources/objects/Planets/mars/mars.obj"));
-    //Model jupiter(FileSystem::getPath("resources/objects/Planets/jupiter/jupiter.obj"));
-    //Model saturn(FileSystem::getPath("resources/objects/Planets/saturn/saturn.obj"));
-    //Model uranus(FileSystem::getPath("resources/objects/Planets/uranus/uranus.obj"));
-    //Model neptune(FileSystem::getPath("resources/objects/Planets/neptune/neptune.obj"));
+    // Sol
+    Model model_sun(FileSystem::getPath("resources/objects/Sun/sun.obj"));
+    Sun sun("Sun", 12756 * 20); // 109 vezes o tamanho da Terra
 
-    Planet planet("Mercury", 0.2f, 3650.0f, 10.0f, 2.0f);
-
-    
-    // draw in wireframe
-    //glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
+    // Aloca os planetas
+    allocate_planets();
 
     float begin = glfwGetTime();
     // render loop
@@ -138,37 +130,16 @@ int main(){
         ourShader.setMat4("projection", projection);
         ourShader.setMat4("view", view);
 
-        ourShader.setMat4("model", planet.render(currentFrame - begin));
-        earth.Draw(ourShader);
+        //render_sun(&ourShader, &sun, &model_sun);
+        render_planets(&ourShader);
 
-        /*
-        model = glm::translate(model, glm::vec3(10.0f, 0.0f, 0.0f)); // translate it down so it's at the center of the scene
-        ourShader.setMat4("model", model);
-        venus.Draw(ourShader);
+        float x = (currentFrame - begin)/ 5.0f;
+        glm::mat4 oi;
+        oi = glm::rotate(oi, glm::radians(360.0f)*x, glm::vec3(0.0f, 1.0f, 0.0f));
+        ourShader.setMat4("model", oi);
+        model_sun.Draw(ourShader);
 
-        model = glm::translate(model, glm::vec3(10.0f, 0.0f, 0.0f)); // translate it down so it's at the center of the scene
-        ourShader.setMat4("model", model);
-        earth.Draw(ourShader);
 
-        model = glm::translate(model, glm::vec3(10.0f, 0.0f, 0.0f)); // translate it down so it's at the center of the scene
-        ourShader.setMat4("model", model);
-        mars.Draw(ourShader);
-
-        model = glm::translate(model, glm::vec3(10.0f, 0.0f, 0.0f)); // translate it down so it's at the center of the scene
-        ourShader.setMat4("model", model);
-        jupiter.Draw(ourShader);
-
-        model = glm::translate(model, glm::vec3(10.0f, 0.0f, 0.0f)); // translate it down so it's at the center of the scene
-        ourShader.setMat4("model", model);
-        saturn.Draw(ourShader);
-
-        model = glm::translate(model, glm::vec3(10.0f, 0.0f, 0.0f)); // translate it down so it's at the center of the scene
-        ourShader.setMat4("model", model);
-        uranus.Draw(ourShader);
-
-        model = glm::translate(model, glm::vec3(10.0f, 0.0f, 0.0f)); // translate it down so it's at the center of the scene
-        ourShader.setMat4("model", model);
-        neptune.Draw(ourShader); */
 
         // glfw: swap buffers and poll IO events (keys pressed/released, mouse moved etc.)
         // -------------------------------------------------------------------------------
@@ -196,6 +167,35 @@ void processInput(GLFWwindow *window){
         camera.ProcessKeyboard(LEFT, deltaTime);
     if (glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS)
         camera.ProcessKeyboard(RIGHT, deltaTime);
+
+    if (glfwGetKey(window, GLFW_KEY_UP) == GLFW_PRESS){
+        Planet::UA += 0.001;
+
+        cout << Planet::UA << endl;
+    }
+
+    if (glfwGetKey(window, GLFW_KEY_DOWN) == GLFW_PRESS){
+        Planet::UA -= 0.001;
+        if(Planet::UA <= 0.000000000001)
+            Planet::UA = 0.000000000001;
+
+        cout << Planet::UA << endl;
+    }
+
+    if (glfwGetKey(window, GLFW_KEY_LEFT) == GLFW_PRESS){
+        Planet::days += 0.001;
+
+        cout << Planet::days << endl;
+    }
+
+    if (glfwGetKey(window, GLFW_KEY_RIGHT) == GLFW_PRESS){
+        Planet::days -= 0.001;
+        if(Planet::days <= 0.000000000001)
+            Planet::days = 0.000000000001;
+
+        cout << Planet::days << endl;
+    }
+
 }
 
 // glfw: whenever the window size changed (by OS or user resize) this callback function executes
@@ -233,6 +233,8 @@ void scroll_callback(GLFWwindow* window, double xoffset, double yoffset){
 }
 
 void allocate_planets(){
+    planets.qt = 0;
+
     // Mercury
     Model mercury(FileSystem::getPath("resources/objects/Planets/mercury/mercury.obj"));
     Planet planet_mercury("Mercury", 4879, 0.24, 58.646, 0.387098);
@@ -259,7 +261,7 @@ void allocate_planets(){
 
     // Jupiter
     Model jupiter(FileSystem::getPath("resources/objects/Planets/jupiter/jupiter.obj"));
-    Planet planet_jupiter("Jupiter", 142984, 11.86, 0.4, 5.204267);
+    Planet planet_jupiter("Jupiter", 142984, 11.86, 4, 5.204267);
     planets.planet.push_back(tuple<Planet, Model>(planet_jupiter, jupiter));
     planets.qt++;
 
@@ -280,5 +282,16 @@ void allocate_planets(){
     Planet planet_neptune("Neptune", 49528, 164.79, 0.69, 30.03661);
     planets.planet.push_back(tuple<Planet, Model>(planet_neptune, neptune));
     planets.qt++;
-
 }
+
+void render_sun(Shader *ourShader, Sun *sun, Model *model){
+    ourShader->setMat4("model", sun->render());
+    model->Draw(*ourShader);
+}//render_sun
+
+void render_planets(Shader *ourShader){
+    for(int i = 0; i < planets.qt; i++){
+        ourShader->setMat4("model", get<0>(planets.planet[i]).render(glfwGetTime()));
+        get<1>(planets.planet[i]).Draw(*ourShader);
+    }
+}//render_planets

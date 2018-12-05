@@ -15,18 +15,21 @@
 #include <iostream>
 #include <string>
 
-
 using namespace std;
 
 class Planet: public Sun {
 	protected:
-		float distance_scale;
 		float t_orbit;
 		float t_rotation;
 		float distance;
 		float begin;
+		
 
 	public:
+		static float UA; // unidade astronomica, para distancia do sol
+		static float days; // days, para tempo de rotação
+		static float years; // anos, para o periodo orbital
+
 		/** Construtor de um Planeta
 			* @param name - Nome do Planeta
 			* @param scale - Usado para decidir a escala do planeta
@@ -39,33 +42,42 @@ class Planet: public Sun {
 			t_rotation = rotation;
 			this->distance = distance;
 			begin = glfwGetTime();
-			distance_scale = 10.0f;
 		}
 
 		glm::mat4 render(float t){
 			glm::mat4 matrix;
-
+			float x;
 			// interlo que faz uma volta em orbita
-			float x = (t - begin)/t_orbit;
+			if(years != 0)
+				x = (t - begin)/(t_orbit * years);
+			else
+				x = 0;
 
 			// Simula o movimento de translação do planeta ao redor do Sol
 			matrix = glm::translate(matrix, glm::vec3(0.0f, 0.0f, 0.0f));
 			matrix = glm::rotate(matrix, glm::radians(360.0f)* x, glm::vec3(0.0f, 1.0f, 0.0f));
-			matrix = glm::translate(matrix, distance * glm::vec3(1.0f, 0.0f, 0.0f));
+			matrix = glm::translate(matrix, (distance * UA) * glm::vec3(1.0f, 0.0f, 0.0f));
 			
 			// retorna olhando pra frente
 			matrix = glm::rotate(matrix, glm::radians(360.0f) * x, glm::vec3(0.0f, -1.0f, 0.0f));
-			// ajeita o angulo
-			matrix = glm::rotate(matrix, glm::radians(270.0f), glm::vec3(1.0f, 0.0f, 0.0f));
 
 			// interlo que faz uma volta de rotação
-			x = (t - begin)/t_rotation;
-
-			// faz o movimento de rotação
-			matrix = glm::rotate(matrix, glm::radians(360.0f) * x, glm::vec3(0.0f, 0.0f, 1.0f));
+			if(days != 0.0)
+				x = (t - begin)/(t_rotation * days);
+			else
+				x = 0;
 
 			// faz o Scale correto do planeta
-			matrix = glm::scale(matrix, Scale * glm::vec3(1.0f, 1.0f, 1.0f));
+			matrix = glm::scale(matrix, (Scale * size) * glm::vec3(1.0f, 1.0f, 1.0f));
+
+			// faz o movimento de rotação
+			matrix = glm::rotate(matrix, glm::radians(360.0f) * x, glm::vec3(0.0f, 1.0f, 0.0f));
+
+			// ajeita o angulo
+			//matrix = glm::rotate(matrix, glm::radians(270.0f), glm::vec3(1.0f, 0.0f, 0.0f));
+
+			
+
 
 			// retorna a matriz
 			return matrix;
@@ -79,5 +91,10 @@ class Planet: public Sun {
 			return t_rotation;
 		}
 };
+
+float Planet::UA = 1;
+float Planet::days = 1;
+float Planet::years = 0;
+
 
 #endif
