@@ -5,11 +5,6 @@
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtc/type_ptr.hpp>
 
-#include <learnopengl/filesystem.h>
-#include <learnopengl/shader_m.h>
-#include <learnopengl/camera.h>
-#include <learnopengl/model.h>
-
 #include "sun.h"
 
 #include <iostream>
@@ -23,6 +18,7 @@ class Planet: public Sun {
 		float t_rotation;
 		float distance;
 		float begin;
+		glm::vec3 position;
 		
 
 	public:
@@ -42,59 +38,54 @@ class Planet: public Sun {
 			t_rotation = rotation;
 			this->distance = distance;
 			begin = glfwGetTime();
+			position = glm::vec3(0.0f, 0.0f, 0.0f);
 		}
 
 		glm::mat4 render(float t){
 			glm::mat4 matrix;
 			float x;
-			// interlo que faz uma volta em orbita
+
+			// Calculo pro tempo de orbita
 			if(years != 0)
 				x = (t - begin)/(t_orbit * years);
 			else
 				x = 0;
 
-			// Simula o movimento de translação do planeta ao redor do Sol
+			// Se movimenta pra posição do Sol
 			matrix = glm::translate(matrix, glm::vec3(0.0f, 0.0f, 0.0f));
+			// rotaciona
 			matrix = glm::rotate(matrix, glm::radians(360.0f)* x, glm::vec3(0.0f, 1.0f, 0.0f));
+			// se distancia do sol
 			matrix = glm::translate(matrix, (distance * UA) * glm::vec3(1.0f, 0.0f, 0.0f));
-			
 			// retorna olhando pra frente
 			matrix = glm::rotate(matrix, glm::radians(360.0f) * x, glm::vec3(0.0f, -1.0f, 0.0f));
 
-			// interlo que faz uma volta de rotação
+			// Calculo pro tempo de rotação
 			if(days != 0.0)
 				x = (t - begin)/(t_rotation * days);
 			else
 				x = 0;
 
-			// faz o Scale correto do planeta
-			matrix = glm::scale(matrix, (Scale * size) * glm::vec3(1.0f, 1.0f, 1.0f));
-
 			// faz o movimento de rotação
 			matrix = glm::rotate(matrix, glm::radians(360.0f) * x, glm::vec3(0.0f, 1.0f, 0.0f));
-
-			// ajeita o angulo
-			//matrix = glm::rotate(matrix, glm::radians(270.0f), glm::vec3(1.0f, 0.0f, 0.0f));
-
-			
-
+			// faz o Scale correto do planeta
+			matrix = glm::scale(matrix, (Scale * size) * glm::vec3(1.0f, 1.0f, 1.0f));
+		
+			// atualiza posição do planeta (Para lua usar)
+			position = (distance * UA) * glm::vec3(1.0f, 0.0f, 0.0f);
 
 			// retorna a matriz
 			return matrix;
 		}
 
-		float getOrbit(){
-			return t_orbit;
-		}
-
-		float getRotation(){
-			return t_rotation;
+		glm::vec3 getPosition(){
+			return position;
 		}
 };
 
 float Planet::UA = 1;
-float Planet::days = 1;
-float Planet::years = 0;
+float Planet::days = 100;
+float Planet::years = 0.1;
 
 
 #endif
