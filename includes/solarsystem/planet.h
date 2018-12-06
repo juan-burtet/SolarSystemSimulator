@@ -46,7 +46,7 @@ class Planet: public Sun {
 			float x;
 
 			// Calculo pro tempo de orbita
-			if(years != 0)
+			if(years* t_orbit != 0)
 				x = (t - begin)/(t_orbit * years);
 			else
 				x = 0;
@@ -61,7 +61,7 @@ class Planet: public Sun {
 			matrix = glm::rotate(matrix, glm::radians(360.0f) * x, glm::vec3(0.0f, -1.0f, 0.0f));
 
 			// Calculo pro tempo de rotação
-			if(days != 0.0)
+			if(days * t_rotation != 0.0)
 				x = (t - begin)/(t_rotation * days);
 			else
 				x = 0;
@@ -72,7 +72,9 @@ class Planet: public Sun {
 			matrix = glm::scale(matrix, (Scale * size) * glm::vec3(1.0f, 1.0f, 1.0f));
 		
 			// atualiza posição do planeta (Para lua usar)
-			position = (distance * UA) * glm::vec3(1.0f, 0.0f, 0.0f);
+			position.x = matrix[3][0];
+			position.y = matrix[3][1];
+			position.z = matrix[3][2]; 
 
 			// retorna a matriz
 			return matrix;
@@ -84,8 +86,8 @@ class Planet: public Sun {
 };
 
 float Planet::UA = 1;
-float Planet::days = 100;
-float Planet::years = 0.1;
+float Planet::days = 0;
+float Planet::years = 0;
 
 
 #endif

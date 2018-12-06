@@ -27,7 +27,7 @@ class Moon: public Planet {
 			float x;
 
 			// Calculo pro tempo de orbita
-			if(years != 0)
+			if(years * t_orbit != 0)
 				x = (t - begin)/(t_orbit * years);
 			else
 				x = 0;
@@ -42,7 +42,7 @@ class Moon: public Planet {
 			matrix = glm::rotate(matrix, glm::radians(360.0f) * x, glm::vec3(0.0f, -1.0f, 0.0f));
 
 			// Calculo pro tempo de rotação
-			if(days != 0.0)
+			if(days * t_rotation != 0.0)
 				x = (t - begin)/(t_rotation * days);
 			else
 				x = 0;
