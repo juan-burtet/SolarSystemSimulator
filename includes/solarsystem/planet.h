@@ -86,8 +86,8 @@ class Planet: public Sun {
 };
 
 float Planet::UA = 1;
-float Planet::days = 0;
-float Planet::years = 0;
+float Planet::days = 0.5;
+float Planet::years = 1;
 
 
 #endif

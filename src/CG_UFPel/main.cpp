@@ -37,7 +37,7 @@ void render_moons(Shader *ourShader); // Luas
 void redner_ship(); // Nave
 
 // Funções da Câmera
-void up_vision();
+void up_vision(Shader *ourShader);
 
 // settings
 const unsigned int SCR_WIDTH = 1280;
@@ -164,19 +164,11 @@ int main(){
         // don't forget to enable shader before setting uniforms
         ourShader.use();
 
-        // view/projection transformations
-        glm::mat4 projection = glm::perspective(glm::radians(camera.Zoom), (float)SCR_WIDTH / (float)SCR_HEIGHT, 0.01f, 1000.0f);
-        glm::mat4 view = camera.GetViewMatrix();
-        ourShader.setMat4("projection", projection);
-        ourShader.setMat4("view", view);
-
-        //glm::mat4 projection = glm::ortho(-1.0f, 1.0f, -1.0f, 1.0f, 0.1f, 5.0f);
-
-
+        // Decide em qual modo de câmera está
         switch(mode){
-            case 1:break;
-            case 2:break;
-            case 3:break;
+            case 1: up_vision(&ourShader); break;
+            case 2: break;
+            case 3: break;
         }
 
         // Chama as renderizações
@@ -212,33 +204,6 @@ void processInput(GLFWwindow *window){
     if (glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS)
         camera.ProcessKeyboard(RIGHT, deltaTime);
 
-    if (glfwGetKey(window, GLFW_KEY_UP) == GLFW_PRESS){
-        Planet::UA += 0.001;
-
-        cout << Planet::UA << endl;
-    }
-
-    if (glfwGetKey(window, GLFW_KEY_DOWN) == GLFW_PRESS){
-        Planet::UA -= 0.001;
-        if(Planet::UA <= 0.000000000001)
-            Planet::UA = 0.000000000001;
-
-        cout << Planet::UA << endl;
-    }
-
-    if (glfwGetKey(window, GLFW_KEY_LEFT) == GLFW_PRESS){
-        Planet::days += 0.001;
-
-        cout << Planet::days << endl;
-    }
-
-    if (glfwGetKey(window, GLFW_KEY_RIGHT) == GLFW_PRESS){
-        Planet::days -= 0.001;
-        if(Planet::days <= 0.000000000001)
-            Planet::days = 0.000000000001;
-
-        cout << Planet::days << endl;
-    }
 }//processInput
 
 // glfw: whenever the window size changed (by OS or user resize) this callback function executes
@@ -292,49 +257,49 @@ void allocate_planets(){
 
     // Mercury
     Model mercury(FileSystem::getPath("resources/objects/Planets/mercury/mercury.obj"));
-    Planet planet_mercury("Mercury", 4879, 1, 58.646, 0.5);
+    Planet planet_mercury("Mercury", 4879, 1, 0.5, 0.5);
     planets.planet.push_back(tuple<Planet, Model>(planet_mercury, mercury));
     planets.qt++;
 
     // Venus
     Model venus(FileSystem::getPath("resources/objects/Planets/venus/venus.obj"));
-    Planet planet_venus("Venus", 12103, 2, -243.021, 0.75);
+    Planet planet_venus("Venus", 12103, 2, -1, 0.75);
     planets.planet.push_back(tuple<Planet, Model>(planet_venus, venus));
     planets.qt++;
 
     // Earth
     Model earth(FileSystem::getPath("resources/objects/Planets/earth/earth.obj"));
-    Planet planet_earth("Earth", 12756, 3, 1, 1);
+    Planet planet_earth("Earth", 12756, 3, 1.5, 1);
     planets.planet.push_back(tuple<Planet, Model>(planet_earth, earth));
     planets.qt++;
 
     // Mars
     Model mars(FileSystem::getPath("resources/objects/Planets/mars/mars.obj"));
-    Planet planet_mars("Mars", 6792, 4, 1.025, 1.25);
+    Planet planet_mars("Mars", 6792, 4, 2, 1.25);
     planets.planet.push_back(tuple<Planet, Model>(planet_mars, mars));
     planets.qt++;
 
     // Jupiter
     Model jupiter(FileSystem::getPath("resources/objects/Planets/jupiter/jupiter.obj"));
-    Planet planet_jupiter("Jupiter", 142984, 5, 4, 2.75);
+    Planet planet_jupiter("Jupiter", 142984, 5, 2.5, 2.75);
     planets.planet.push_back(tuple<Planet, Model>(planet_jupiter, jupiter));
     planets.qt++;
 
     // Saturn
     Model saturn(FileSystem::getPath("resources/objects/Planets/saturn/saturn.obj"));
-    Planet planet_saturn("Saturn", 120573, 6, 0.43, 5.0);
+    Planet planet_saturn("Saturn", 120573, 6, 3, 5.0);
     planets.planet.push_back(tuple<Planet, Model>(planet_saturn, saturn));
     planets.qt++;
 
     // Uranus
     Model uranus(FileSystem::getPath("resources/objects/Planets/uranus/uranus.obj"));
-    Planet planet_uranus("Uranus", 51118, 7, 0.71, 6.25);
+    Planet planet_uranus("Uranus", 51118, 7, 3.5, 6.25);
     planets.planet.push_back(tuple<Planet, Model>(planet_uranus, uranus));
     planets.qt++;
 
     // Neptune
     Model neptune(FileSystem::getPath("resources/objects/Planets/neptune/neptune.obj"));
-    Planet planet_neptune("Neptune", 49528, 8, 0.69, 7.25);
+    Planet planet_neptune("Neptune", 49528, 8, 4, 7.25);
     planets.planet.push_back(tuple<Planet, Model>(planet_neptune, neptune));
     planets.qt++;
 }// allocate_planets
@@ -344,7 +309,7 @@ void allocate_moons(){
 
     // Luas da Terra
     Model moon_model(FileSystem::getPath("resources/objects/Moons/Earth/Moon/moon.obj"));
-    Moon moon("Moon", 12756/4, 1, 1, 0.07, &get<0>(planets.planet[2]));
+    Moon moon("Moon", 12756/4, 1, 0.5, 0.07, &get<0>(planets.planet[2]));
     moons.moon.push_back(tuple<Moon, Model>(moon, moon_model));
     moons.qt++;
 
@@ -352,7 +317,7 @@ void allocate_moons(){
 
     // Luas de Jupiter
     Model io_model(FileSystem::getPath("resources/objects/Moons/Jupiter/Io/io.obj"));
-    Moon io("Io", 142984/7, 1, 1, 0.6, &get<0>(planets.planet[4]));
+    Moon io("Io", 142984/7, 1, 0.5, 0.6, &get<0>(planets.planet[4]));
     moons.moon.push_back(tuple<Moon, Model>(io, io_model));
     moons.qt++;
 
@@ -362,12 +327,12 @@ void allocate_moons(){
     moons.qt++;
 
     Model ganymede_model(FileSystem::getPath("resources/objects/Moons/Jupiter/Ganymede/ganymede.obj"));
-    Moon ganymede("Ganymede", 142984/5, 3, 1, 1.1, &get<0>(planets.planet[4]));
+    Moon ganymede("Ganymede", 142984/5, 3, 1.5, 1.1, &get<0>(planets.planet[4]));
     moons.moon.push_back(tuple<Moon, Model>(ganymede, ganymede_model));
     moons.qt++;
 
     Model callisto_model(FileSystem::getPath("resources/objects/Moons/Jupiter/Callisto/callisto.obj"));
-    Moon callisto("Callisto", 142984/6, 4, 1, 1.35, &get<0>(planets.planet[4]));
+    Moon callisto("Callisto", 142984/6, 4, 2, 1.35, &get<0>(planets.planet[4]));
     moons.moon.push_back(tuple<Moon, Model>(callisto, callisto_model));
     moons.qt++;
 
@@ -375,7 +340,7 @@ void allocate_moons(){
 
     // Lua de Saturno
     Model titan_model(FileSystem::getPath("resources/objects/Moons/Saturn/Titan/titan.obj"));
-    Moon titan("Titan", 120573/4, 1, 1, 0.5, &get<0>(planets.planet[5]));
+    Moon titan("Titan", 120573/4, 1, 0.5, 0.5, &get<0>(planets.planet[5]));
     moons.moon.push_back(tuple<Moon, Model>(titan, titan_model));
     moons.qt++;
 
@@ -383,22 +348,22 @@ void allocate_moons(){
 
     // Luas de Urano
     Model ariel_model(FileSystem::getPath("resources/objects/Moons/Uranus/Ariel/ariel.obj"));
-    Moon ariel("Ariel", 51118/5, 1, 1, 0.2, &get<0>(planets.planet[6]));
+    Moon ariel("Ariel", 51118/5, 1, 0.5, 0.2, &get<0>(planets.planet[6]));
     moons.moon.push_back(tuple<Moon, Model>(ariel, ariel_model));
     moons.qt++;
 
     Model umbriel_model(FileSystem::getPath("resources/objects/Moons/Uranus/Umbriel/umbriel.obj"));
-    Moon umbriel("Umbriel", 51118/5, 2, 1, 0.3, &get<0>(planets.planet[6]));
+    Moon umbriel("Umbriel", 51118/5, 2, 1.0, 0.3, &get<0>(planets.planet[6]));
     moons.moon.push_back(tuple<Moon, Model>(umbriel, umbriel_model));
     moons.qt++;
 
     Model titania_model(FileSystem::getPath("resources/objects/Moons/Uranus/Titania/titania.obj"));
-    Moon titania("Titania", 51118/5, 3, 1, 0.4, &get<0>(planets.planet[6]));
+    Moon titania("Titania", 51118/5, 3, 1.5, 0.4, &get<0>(planets.planet[6]));
     moons.moon.push_back(tuple<Moon, Model>(titania, titania_model));
     moons.qt++;
 
     Model oberon_model(FileSystem::getPath("resources/objects/Moons/Uranus/Oberon/oberon.obj"));
-    Moon oberon("Oberon", 51118/5, 4, 1, 0.5, &get<0>(planets.planet[6]));
+    Moon oberon("Oberon", 51118/5, 4, 2, 0.5, &get<0>(planets.planet[6]));
     moons.moon.push_back(tuple<Moon, Model>(oberon, oberon_model));
     moons.qt++;
 
@@ -406,7 +371,7 @@ void allocate_moons(){
 
     // Luas de Netuno
     Model triton_model(FileSystem::getPath("resources/objects/Moons/Neptune/Triton/triton.obj"));
-    Moon triton("Triton", 49528/4, 1, 1, 0.25, &get<0>(planets.planet[7]));
+    Moon triton("Triton", 49528/4, 1, 0.5, 0.25, &get<0>(planets.planet[7]));
     moons.moon.push_back(tuple<Moon, Model>(triton, triton_model));
     moons.qt++;
 }//allocate_moons
@@ -415,7 +380,9 @@ void allocate_moons(){
 void render_stars(Shader *ourShader, Model *stars){
     glm::mat4 matrix;
     matrix = glm::translate(matrix, glm::vec3(0.0f, 0.0f, 0.0f));
-    matrix = glm::scale(matrix, 100.0f * glm::vec3(1.0f, 1.0f, 1.0f));
+    if(mode == 1)
+        matrix = glm::rotate(matrix, glm::radians(90.0f), glm::vec3(0.0f, 0.0f, 1.0f));
+    matrix = glm::scale(matrix, 30.0f * glm::vec3(1.0f, 1.0f, 1.0f));
     ourShader->setMat4("model", matrix);
     stars->Draw(*ourShader);
 }//render_stars
@@ -442,6 +409,15 @@ void render_moons(Shader *ourShader){
     }
 }//render_moons
 
-void up_vision(){
+void up_vision(Shader *ourShader){
     
-}
+    glm::mat4 projection = glm::perspective(glm::radians(camera.Zoom), (float)SCR_WIDTH / (float)SCR_HEIGHT, 0.01f, 1000.0f);
+    camera.Position = glm::vec3(0.0f, 20.0f, 0.0f);
+    camera.Front = glm::normalize(glm::vec3(0.0f, -3.0f, 0.0f));
+    camera.Up = glm::normalize(glm::vec3(0.0f, 0.0f, 1.0f));
+    camera.Right = glm::normalize(glm::vec3(1.0f, 0.0f, 0.0f));
+    glm::mat4 view = camera.GetViewMatrix();
+    
+    ourShader->setMat4("projection", projection);
+    ourShader->setMat4("view", view);    
+}//up_vision
