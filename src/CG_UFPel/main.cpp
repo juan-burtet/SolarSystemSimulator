@@ -96,7 +96,7 @@ Vision vision;
 // Struct da nave
 typedef struct{
     vector<tuple<Model, glm::mat4>> ship;
-    int qt;
+    glm::mat4 cam;
 }Ship;
 Ship ship;
 
@@ -180,9 +180,9 @@ int main(){
 
         // Decide em qual modo de câmera está
         switch(mode){
-            case 1: up_vision(&ourShader); break;
+            case 1: up_vision(&ourShader);   break;
             case 2: pick_vision(&ourShader); break;
-            case 3: break;
+            case 3: ship_vision(&ourShader); break;
         }
 
         // Chama as renderizações
@@ -208,24 +208,6 @@ void processInput(GLFWwindow *window){
     // Sair do programa
     if (glfwGetKey(window, GLFW_KEY_ESCAPE) == GLFW_PRESS){
         glfwSetWindowShouldClose(window, true);
-        return;
-    }
-
-    // Movimentação da câmera
-    if (glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS){
-        camera.ProcessKeyboard(FORWARD, deltaTime); 
-        return;
-    }
-    if (glfwGetKey(window, GLFW_KEY_S) == GLFW_PRESS){
-        camera.ProcessKeyboard(BACKWARD, deltaTime); 
-        return;
-    }
-    if (glfwGetKey(window, GLFW_KEY_A) == GLFW_PRESS){
-        camera.ProcessKeyboard(LEFT, deltaTime); 
-        return;
-    }
-    if (glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS){
-        camera.ProcessKeyboard(RIGHT, deltaTime); 
         return;
     }
 
@@ -307,6 +289,23 @@ void processInput(GLFWwindow *window){
     // Comandos do modo 3
     if (mode == 3){
 
+        // Movimentação da Nave
+        if (glfwGetKey(window, GLFW_KEY_RIGHT) == GLFW_PRESS){
+            get<1>(ship.ship[0]) = glm::rotate(get<1>(ship.ship[0]), glm::radians(90.0f) * -deltaTime, glm::vec3(0.0f, 1.0f, 0.0f));
+            ship.cam = glm::rotate(ship.cam, glm::radians(180.0f) * deltaTime , glm::vec3(0.0f, 1.0f, 0.0f));
+        }//if
+        if (glfwGetKey(window, GLFW_KEY_LEFT) == GLFW_PRESS){
+            get<1>(ship.ship[0]) = glm::rotate(get<1>(ship.ship[0]), glm::radians(90.0f) * deltaTime, glm::vec3(0.0f, 1.0f, 0.0f));
+            ship.cam = glm::rotate(ship.cam, glm::radians(90.0f) * -deltaTime, glm::vec3(0.0f, 1.0f, 0.0f));
+        }//if
+        if (glfwGetKey(window, GLFW_KEY_UP) == GLFW_PRESS){
+            get<1>(ship.ship[0]) = glm::rotate(get<1>(ship.ship[0]), glm::radians(90.0f) * deltaTime, glm::vec3(1.0f, 0.0f, 0.0f));
+            ship.cam = glm::rotate(ship.cam, glm::radians(90.0f) * -deltaTime , glm::vec3(1.0f, 0.0f, 0.0f));
+        }//if
+        if (glfwGetKey(window, GLFW_KEY_DOWN) == GLFW_PRESS){
+            get<1>(ship.ship[0]) = glm::rotate(get<1>(ship.ship[0]), glm::radians(90.0f) * -deltaTime, glm::vec3(1.0f, 0.0f, 0.0f));
+            ship.cam = glm::rotate(ship.cam, glm::radians(90.0f) * deltaTime, glm::vec3(1.0f, 0.0f, 0.0f));
+        }//if
     }//if
 
     freeButton();
@@ -487,7 +486,17 @@ void allocate_moons(){
 
 // Aloca a nave
 void allocate_ship(){
+    glm::mat4 matrix;
 
+    // Inicializa a parte da nave
+    Model model_ship(FileSystem::getPath("resources/objects/Falcon/Millennium_Falcon.obj"));
+    matrix = glm::translate(matrix, glm::vec3(0.0f, -0.02f, 2.9f));
+    matrix = glm::rotate(matrix, glm::radians(180.0f), glm::vec3(0.0f, 1.0f, 0.0f));
+    matrix = glm::scale(matrix, 0.0001f * glm::vec3(1.0f, 1.0f, 1.0f));
+    ship.ship.push_back(tuple<Model,glm::mat4>(model_ship, matrix));
+    
+    // inicializa a camera
+    ship.cam = camera.GetViewMatrix();
 }//allocate_ship
 
 // Renderiza as estrelas
@@ -522,6 +531,12 @@ void render_moons(Shader *ourShader){
         get<1>(moons.moon[i]).Draw(*ourShader);
     }
 }//render_moons
+
+// Renderiza a nave
+void render_ship(Shader *ourShader){
+    ourShader->setMat4("model", get<1>(ship.ship[0]));
+    get<0>(ship.ship[0]).Draw(*ourShader);
+}//render_ship
 
 // Utiliza a câmera com visão total do sistema solar
 void up_vision(Shader *ourShader){
@@ -563,7 +578,20 @@ void pick_vision(Shader *ourShader){
 
 // Utiliza a câmera da nave
 void ship_vision(Shader *ourShader){
+    glm::vec3 x;
+    float scale;
+    x = glm::vec3(0.0f, 0.0f, 1000.0f);
+    scale = 0.0001f;
 
+    get<1>(ship.ship[0]) = glm::translate(get<1>(ship.ship[0]), deltaTime * x);
+    ship.cam = glm::translate(ship.cam, scale * deltaTime * x);
+
+    glm::mat4 projection = glm::perspective(glm::radians(camera.Zoom), (float)SCR_WIDTH / (float)SCR_HEIGHT, 0.01f, 1000.0f);
+    glm::mat4 view = ship.cam;
+
+    ourShader->setMat4("projection", projection);
+    ourShader->setMat4("view", view);
+    render_ship(ourShader);
 }//ship_vision
 
 // Retorna a distância para visualizar o objeto
@@ -633,6 +661,8 @@ void initialize(){
     allocate_planets();
     // Aloca as luas
     allocate_moons();
+    // Aloca a nave
+    allocate_ship();
 
     // Inicializa os valores da struct Vision
     vision.planet = 0;
