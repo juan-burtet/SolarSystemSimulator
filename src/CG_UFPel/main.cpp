@@ -43,6 +43,8 @@ void ship_vision(Shader *ourShader); // Modo 3
 glm::vec3 distance_vision(); // Distância da visão do planeta
 glm ::vec3 getMoonPosition(); // Posição da lua
 float getMoonScale(); // Scale da lua
+glm::vec3 shipPosition(); // Posição da nave
+glm::vec3 camPosition(); // Posição da câmera
 
 // Função do Botão
 bool processButton(); // Apertou um botão
@@ -289,10 +291,16 @@ void processInput(GLFWwindow *window){
     // Comandos do modo 3
     if (mode == 3){
 
+        float scale = 0.0001f;
+        glm::vec3 x = camPosition() - shipPosition();
+
         // Movimentação da Nave
         if (glfwGetKey(window, GLFW_KEY_RIGHT) == GLFW_PRESS){
             get<1>(ship.ship[0]) = glm::rotate(get<1>(ship.ship[0]), glm::radians(90.0f) * -deltaTime, glm::vec3(0.0f, 1.0f, 0.0f));
-            ship.cam = glm::rotate(ship.cam, glm::radians(180.0f) * deltaTime , glm::vec3(0.0f, 1.0f, 0.0f));
+            ship.cam = glm::translate(ship.cam, scale * x);
+            //ship.cam = glm::rotate(ship.cam, glm::radians(90.0f) * deltaTime , glm::vec3(0.0f, 1.0f, 0.0f));
+            ship.cam = glm::translate(ship.cam, scale * -x);
+
         }//if
         if (glfwGetKey(window, GLFW_KEY_LEFT) == GLFW_PRESS){
             get<1>(ship.ship[0]) = glm::rotate(get<1>(ship.ship[0]), glm::radians(90.0f) * deltaTime, glm::vec3(0.0f, 1.0f, 0.0f));
@@ -637,6 +645,30 @@ float getMoonScale(){
 
     return x;
 }//getMoonScale
+
+// Retorna a posição da nave
+glm::vec3 shipPosition(){
+    glm::mat4 matrix = get<1>(ship.ship[0]);
+    glm::vec3 position;
+
+    position.x = matrix[3][0];
+    position.y = matrix[3][1];
+    position.z = matrix[3][2];
+
+    return position; 
+}//shipPosition
+
+// Retorna a posição da câmera
+glm::vec3 camPosition(){
+    glm::mat4 matrix = ship.cam;
+    glm::vec3 position;
+
+    position.x = matrix[3][0];
+    position.y = matrix[3][1];
+    position.z = matrix[3][2];
+
+    return position; 
+}//camPosition
 
 // Aperta o botão
 bool processButton(){
