@@ -30,14 +30,26 @@ void allocate_moons(); // Luas
 void allocate_ship(); // Nave
 
 // Funções de renderização de Modelos
-void render_stars(Shader *ourShader, Model *stars);
+void render_stars(Shader *ourShader, Model *stars); // Estrelas
 void render_sun(Shader *ourShader); // Sol
 void render_planets(Shader *ourShader); // Planetas
 void render_moons(Shader *ourShader); // Luas
-void redner_ship(); // Nave
+void render_ship(Shader *ourShader); // Nave
 
 // Funções da Câmera
-void up_vision(Shader *ourShader);
+void up_vision(Shader *ourShader); // Modo 1
+void pick_vision(Shader *ourShader); // Modo 2
+void ship_vision(Shader *ourShader); // Modo 3
+glm::vec3 distance_vision(); // Distância da visão do planeta
+glm ::vec3 getMoonPosition(); // Posição da lua
+float getMoonScale(); // Scale da lua
+
+// Função do Botão
+bool processButton(); // Apertou um botão
+void freeButton(); // Largou o botão
+
+// Função que inicializa as variaveis
+void initialize();
 
 // settings
 const unsigned int SCR_WIDTH = 1280;
@@ -74,6 +86,13 @@ typedef struct{
 }Moons;
 Moons moons;
 
+// Struct da visão dos planetas
+typedef struct{
+    int planet;
+    int moon;
+}Vision;
+Vision vision;
+
 // Struct da nave
 typedef struct{
     vector<tuple<Model, glm::mat4>> ship;
@@ -81,10 +100,13 @@ typedef struct{
 }Ship;
 Ship ship;
 
+// Botão 
+bool button;
+
 // Modo de câmera
 int mode;
 
-
+// Função Main
 int main(){
     // glfw: initialize and configure
     // ------------------------------
@@ -133,18 +155,10 @@ int main(){
     // Modelo das Estrelas
     Model stars(FileSystem::getPath("resources/objects/Stars/stars.obj"));
 
-    // Aloca o sol
-    allocate_sun();
-    // Aloca os planetas
-    allocate_planets();
-    // Aloca as luas
-    allocate_moons();
-
-    // Modo da camêra
-    mode = 1;
-
+    // Inicializa as variaveis
+    initialize();
+    
     // render loop
-    // -----------
     while (!glfwWindowShouldClose(window)){
         // per-frame time logic
         // --------------------
@@ -158,7 +172,7 @@ int main(){
 
         // render
         // ------
-        glClearColor(0.05f, 0.05f, 0.05f, 1.0f);
+        glClearColor(0.00f, 0.00f, 0.00f, 1.0f);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
         // don't forget to enable shader before setting uniforms
@@ -167,7 +181,7 @@ int main(){
         // Decide em qual modo de câmera está
         switch(mode){
             case 1: up_vision(&ourShader); break;
-            case 2: break;
+            case 2: pick_vision(&ourShader); break;
             case 3: break;
         }
 
@@ -190,24 +204,115 @@ int main(){
 }//main
 
 // process all input: query GLFW whether relevant keys are pressed/released this frame and react accordingly
-// ---------------------------------------------------------------------------------------------------------
 void processInput(GLFWwindow *window){
-    if (glfwGetKey(window, GLFW_KEY_ESCAPE) == GLFW_PRESS)
+    // Sair do programa
+    if (glfwGetKey(window, GLFW_KEY_ESCAPE) == GLFW_PRESS){
         glfwSetWindowShouldClose(window, true);
+        return;
+    }
 
-    if (glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS)
-        camera.ProcessKeyboard(FORWARD, deltaTime);
-    if (glfwGetKey(window, GLFW_KEY_S) == GLFW_PRESS)
-        camera.ProcessKeyboard(BACKWARD, deltaTime);
-    if (glfwGetKey(window, GLFW_KEY_A) == GLFW_PRESS)
-        camera.ProcessKeyboard(LEFT, deltaTime);
-    if (glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS)
-        camera.ProcessKeyboard(RIGHT, deltaTime);
+    // Movimentação da câmera
+    if (glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS){
+        camera.ProcessKeyboard(FORWARD, deltaTime); 
+        return;
+    }
+    if (glfwGetKey(window, GLFW_KEY_S) == GLFW_PRESS){
+        camera.ProcessKeyboard(BACKWARD, deltaTime); 
+        return;
+    }
+    if (glfwGetKey(window, GLFW_KEY_A) == GLFW_PRESS){
+        camera.ProcessKeyboard(LEFT, deltaTime); 
+        return;
+    }
+    if (glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS){
+        camera.ProcessKeyboard(RIGHT, deltaTime); 
+        return;
+    }
 
+    // Troca do tipo de câmera
+    if (glfwGetKey(window, GLFW_KEY_1) == GLFW_PRESS){
+        mode = 1;
+        return;
+    }
+    if (glfwGetKey(window, GLFW_KEY_2) == GLFW_PRESS){
+        mode = 2;
+        return;
+    }
+    if (glfwGetKey(window, GLFW_KEY_3) == GLFW_PRESS){
+        mode = 3;
+        return;
+    }
+
+    // Comandos do modo 1
+    if (mode == 1){
+
+    }//if
+
+    // Comandos do modo 2
+    if (mode == 2){
+
+        // Troca de Planetas
+        if (glfwGetKey(window, GLFW_KEY_LEFT) == GLFW_PRESS){
+            if(processButton())
+                return;
+
+            vision.moon = -1;
+            vision.planet--;
+            if (vision.planet < 0)
+                vision.planet = 7;
+
+            return;
+        }//if
+        if (glfwGetKey(window, GLFW_KEY_RIGHT) == GLFW_PRESS){
+            if(processButton())
+                return;
+
+            vision.moon = -1;
+            vision.planet++;
+            if (vision.planet > 7)
+                vision.planet = 0;
+
+            return;
+        }//if
+
+        // Se tiver luas, tem como trocar de planeta
+        if (get<0>(planets.planet[vision.planet]).getMoons() > 0){
+            //Troca de luas
+            if (glfwGetKey(window, GLFW_KEY_UP) == GLFW_PRESS){
+                if(processButton())
+                    return;
+
+                vision.moon++;
+                if (vision.moon >= (int) get<0>(planets.planet[vision.planet]).getMoons())
+                    vision.moon = -1;
+
+                return;
+            }//if
+            if (glfwGetKey(window, GLFW_KEY_DOWN) == GLFW_PRESS){
+                if(processButton())
+                    return;
+
+                vision.moon--;
+                if (vision.moon == -2)
+                    vision.moon = get<0>(planets.planet[vision.planet]).getMoons() -1;
+                else if(vision.moon < 0)
+                    vision.moon = -1;
+
+                return;
+            }//if
+        }//if
+
+    }//if
+
+    // Comandos do modo 3
+    if (mode == 3){
+
+    }//if
+
+    freeButton();
 }//processInput
 
 // glfw: whenever the window size changed (by OS or user resize) this callback function executes
-// ---------------------------------------------------------------------------------------------
 void framebuffer_size_callback(GLFWwindow* window, int width, int height){
     // make sure the viewport matches the new window dimensions; note that width and 
     // height will be significantly larger than specified on retina displays.
@@ -215,7 +320,6 @@ void framebuffer_size_callback(GLFWwindow* window, int width, int height){
 }//framebuffer_size_callback
 
 // glfw: whenever the mouse moves, this callback is called
-// -------------------------------------------------------
 void mouse_callback(GLFWwindow* window, double xpos, double ypos){
     if (firstMouse)
     {
@@ -234,7 +338,6 @@ void mouse_callback(GLFWwindow* window, double xpos, double ypos){
 }//mouse_callback
 
 // glfw: whenever the mouse scroll wheel scrolls, this callback is called
-// ----------------------------------------------------------------------
 void scroll_callback(GLFWwindow* window, double xoffset, double yoffset){
     
     camera.ProcessMouseScroll(yoffset);
@@ -270,6 +373,7 @@ void allocate_planets(){
     // Earth
     Model earth(FileSystem::getPath("resources/objects/Planets/earth/earth.obj"));
     Planet planet_earth("Earth", 12756, 3, 1.5, 1);
+    planet_earth.setMoons(1);
     planets.planet.push_back(tuple<Planet, Model>(planet_earth, earth));
     planets.qt++;
 
@@ -282,28 +386,33 @@ void allocate_planets(){
     // Jupiter
     Model jupiter(FileSystem::getPath("resources/objects/Planets/jupiter/jupiter.obj"));
     Planet planet_jupiter("Jupiter", 142984, 5, 2.5, 2.75);
+    planet_jupiter.setMoons(4);
     planets.planet.push_back(tuple<Planet, Model>(planet_jupiter, jupiter));
     planets.qt++;
 
     // Saturn
     Model saturn(FileSystem::getPath("resources/objects/Planets/saturn/saturn.obj"));
     Planet planet_saturn("Saturn", 120573, 6, 3, 5.0);
+    planet_saturn.setMoons(1);
     planets.planet.push_back(tuple<Planet, Model>(planet_saturn, saturn));
     planets.qt++;
 
     // Uranus
     Model uranus(FileSystem::getPath("resources/objects/Planets/uranus/uranus.obj"));
     Planet planet_uranus("Uranus", 51118, 7, 3.5, 6.25);
+    planet_uranus.setMoons(4);
     planets.planet.push_back(tuple<Planet, Model>(planet_uranus, uranus));
     planets.qt++;
 
     // Neptune
     Model neptune(FileSystem::getPath("resources/objects/Planets/neptune/neptune.obj"));
     Planet planet_neptune("Neptune", 49528, 8, 4, 7.25);
+    planet_neptune.setMoons(1);
     planets.planet.push_back(tuple<Planet, Model>(planet_neptune, neptune));
     planets.qt++;
 }// allocate_planets
 
+// Aloca as luas
 void allocate_moons(){
     moons.qt = 0;
 
@@ -340,7 +449,7 @@ void allocate_moons(){
 
     // Lua de Saturno
     Model titan_model(FileSystem::getPath("resources/objects/Moons/Saturn/Titan/titan.obj"));
-    Moon titan("Titan", 120573/4, 1, 0.5, 0.5, &get<0>(planets.planet[5]));
+    Moon titan("Titan", 120573/4, 1, 0.5, 0.6, &get<0>(planets.planet[5]));
     moons.moon.push_back(tuple<Moon, Model>(titan, titan_model));
     moons.qt++;
 
@@ -348,22 +457,22 @@ void allocate_moons(){
 
     // Luas de Urano
     Model ariel_model(FileSystem::getPath("resources/objects/Moons/Uranus/Ariel/ariel.obj"));
-    Moon ariel("Ariel", 51118/5, 1, 0.5, 0.2, &get<0>(planets.planet[6]));
+    Moon ariel("Ariel", 51118/5, 1, 0.5, 0.3, &get<0>(planets.planet[6]));
     moons.moon.push_back(tuple<Moon, Model>(ariel, ariel_model));
     moons.qt++;
 
     Model umbriel_model(FileSystem::getPath("resources/objects/Moons/Uranus/Umbriel/umbriel.obj"));
-    Moon umbriel("Umbriel", 51118/5, 2, 1.0, 0.3, &get<0>(planets.planet[6]));
+    Moon umbriel("Umbriel", 51118/5, 2, 1.0, 0.4, &get<0>(planets.planet[6]));
     moons.moon.push_back(tuple<Moon, Model>(umbriel, umbriel_model));
     moons.qt++;
 
     Model titania_model(FileSystem::getPath("resources/objects/Moons/Uranus/Titania/titania.obj"));
-    Moon titania("Titania", 51118/5, 3, 1.5, 0.4, &get<0>(planets.planet[6]));
+    Moon titania("Titania", 51118/5, 3, 1.5, 0.5, &get<0>(planets.planet[6]));
     moons.moon.push_back(tuple<Moon, Model>(titania, titania_model));
     moons.qt++;
 
     Model oberon_model(FileSystem::getPath("resources/objects/Moons/Uranus/Oberon/oberon.obj"));
-    Moon oberon("Oberon", 51118/5, 4, 2, 0.5, &get<0>(planets.planet[6]));
+    Moon oberon("Oberon", 51118/5, 4, 2, 0.6, &get<0>(planets.planet[6]));
     moons.moon.push_back(tuple<Moon, Model>(oberon, oberon_model));
     moons.qt++;
 
@@ -371,10 +480,15 @@ void allocate_moons(){
 
     // Luas de Netuno
     Model triton_model(FileSystem::getPath("resources/objects/Moons/Neptune/Triton/triton.obj"));
-    Moon triton("Triton", 49528/4, 1, 0.5, 0.25, &get<0>(planets.planet[7]));
+    Moon triton("Triton", 49528/4, 1, 0.5, 0.3, &get<0>(planets.planet[7]));
     moons.moon.push_back(tuple<Moon, Model>(triton, triton_model));
     moons.qt++;
 }//allocate_moons
+
+// Aloca a nave
+void allocate_ship(){
+
+}//allocate_ship
 
 // Renderiza as estrelas
 void render_stars(Shader *ourShader, Model *stars){
@@ -409,8 +523,8 @@ void render_moons(Shader *ourShader){
     }
 }//render_moons
 
+// Utiliza a câmera com visão total do sistema solar
 void up_vision(Shader *ourShader){
-    
     glm::mat4 projection = glm::perspective(glm::radians(camera.Zoom), (float)SCR_WIDTH / (float)SCR_HEIGHT, 0.01f, 1000.0f);
     camera.Position = glm::vec3(0.0f, 20.0f, 0.0f);
     camera.Front = glm::normalize(glm::vec3(0.0f, -3.0f, 0.0f));
@@ -421,3 +535,112 @@ void up_vision(Shader *ourShader){
     ourShader->setMat4("projection", projection);
     ourShader->setMat4("view", view);    
 }//up_vision
+
+// Utiliza a câmera com visão dos objetos
+void pick_vision(Shader *ourShader){
+    // Posição do objeto visualizado
+    glm::vec3 objPos = get<0>(planets.planet[vision.planet]).getPosition();
+
+    if(vision.moon >= 0)
+        objPos = getMoonPosition();
+
+    // Criação da matriz de projeção
+    glm::mat4 projection = glm::perspective(glm::radians(camera.Zoom), (float)SCR_WIDTH / (float)SCR_HEIGHT, 0.01f, 1000.0f);
+
+    // Posição da câmera
+    camera.Position = distance_vision() + objPos;
+    camera.Front    = glm::normalize(objPos - camera.Position);
+    camera.Right    = glm::normalize(glm::cross(camera.Front, camera.WorldUp));
+    camera.Up       = glm::normalize(glm::cross(camera.Right, camera.Front));
+    
+    // View
+    glm::mat4 view = camera.GetViewMatrix();
+    
+    // Atualiza o Shader
+    ourShader->setMat4("projection", projection);
+    ourShader->setMat4("view", view);    
+}//pick_vision
+
+// Utiliza a câmera da nave
+void ship_vision(Shader *ourShader){
+
+}//ship_vision
+
+// Retorna a distância para visualizar o objeto
+glm::vec3 distance_vision(){
+    glm::vec3 x;
+    float scale;
+    if(vision.moon < 0)
+        scale = get<0>(planets.planet[vision.planet]).getScale();
+    else
+        scale = getMoonScale();
+
+    float aux = (1.5f * scale)/142984;
+    x = glm::vec3(-aux, aux, 0.0f);
+    return x;
+}//distance_vision
+
+// Retorna a posição da lua selecionada
+glm::vec3 getMoonPosition(){
+    glm::vec3 x;
+
+    switch(vision.planet){
+        case 2: x = get<0>(moons.moon[0]).getPosition();                break;
+        case 4: x = get<0>(moons.moon[1 + vision.moon]).getPosition();  break;
+        case 5: x = get<0>(moons.moon[5]).getPosition();                break;
+        case 6: x = get<0>(moons.moon[6 + vision.moon]).getPosition();  break;
+        case 7: x = get<0>(moons.moon[10]).getPosition();               break;
+    }
+
+    return x;
+}//getMoonPosition
+
+// Retorna o scale da lua
+float getMoonScale(){
+    float x;
+
+    switch(vision.planet){
+        case 2: x = get<0>(moons.moon[0]).getScale();                break;
+        case 4: x = get<0>(moons.moon[1 + vision.moon]).getScale();  break;
+        case 5: x = get<0>(moons.moon[5]).getScale();                break;
+        case 6: x = get<0>(moons.moon[6 + vision.moon]).getScale();  break;
+        case 7: x = get<0>(moons.moon[10]).getScale();               break;
+    }
+
+    return x;
+}//getMoonScale
+
+// Aperta o botão
+bool processButton(){
+    if(button)
+        return true;
+
+    button = true;
+    return false;
+}//processButton
+
+// Abre o botão
+void freeButton(){
+    // botão não apertado
+    button = false;
+}//freeButton
+
+// Inicializa as variaveis
+void initialize(){
+    // Aloca o sol
+    allocate_sun();
+    // Aloca os planetas
+    allocate_planets();
+    // Aloca as luas
+    allocate_moons();
+
+    // Inicializa os valores da struct Vision
+    vision.planet = 0;
+    vision.moon = -1;
+
+    // Modo da camêra
+    mode = 1;
+
+    // Botão não apertado
+    button = false;
+}//initialize
