@@ -19,6 +19,7 @@ class Planet: public Sun {
 		float distance;
 		float begin;
 		glm::vec3 position;
+		unsigned int qtMoons;
 		
 
 	public:
@@ -39,6 +40,7 @@ class Planet: public Sun {
 			this->distance = distance;
 			begin = glfwGetTime();
 			position = glm::vec3(0.0f, 0.0f, 0.0f);
+			qtMoons = 0;
 		}
 
 		glm::mat4 render(float t){
@@ -80,14 +82,26 @@ class Planet: public Sun {
 			return matrix;
 		}
 
+		float getScale(){
+			return Scale;
+		}
+
 		glm::vec3 getPosition(){
 			return position;
+		}
+
+		void setMoons(unsigned int x){
+			qtMoons = x;
+		}
+
+		unsigned int getMoons(){
+			return qtMoons;
 		}
 };
 
 float Planet::UA = 1;
-float Planet::days = 0.5;
-float Planet::years = 1;
+float Planet::days = 5;
+float Planet::years = 10;
 
 
 #endif

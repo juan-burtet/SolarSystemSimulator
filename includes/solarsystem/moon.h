@@ -51,8 +51,18 @@ class Moon: public Planet {
 			matrix = glm::rotate(matrix, glm::radians(360.0f) * x, glm::vec3(0.0f, 1.0f, 0.0f));
 			// faz o Scale correto da lua
 			matrix = glm::scale(matrix, (Scale * size) * glm::vec3(1.0f, 1.0f, 1.0f));
+			
+			// atualiza posição da lua
+			position.x = matrix[3][0];
+			position.y = matrix[3][1];
+			position.z = matrix[3][2]; 
+
 			// retorna a matriz
 			return matrix;
+		}
+
+		glm::vec3 getPosition(){
+			return position;
 		}
 
 		glm::vec3 getOrigin(){
