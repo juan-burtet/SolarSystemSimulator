@@ -55,9 +55,19 @@ void freeButton(); // Largou o botão
 // Função que inicializa as variaveis
 void initialize();
 
+// Funções pro funcionamento do jogo
+void pauseGame(); // Pausar o jogo
+void passingTime(); // Processa o tempo
+
+// Funções que imprimem as informações
+void info();
+void info_mode_1();
+void info_mode_2();
+void info_mode_3();
+
 // settings
-const unsigned int SCR_WIDTH = 1280;
-const unsigned int SCR_HEIGHT = 720;
+const unsigned int SCR_WIDTH = 800;
+const unsigned int SCR_HEIGHT = 600;
 
 // camera
 Camera camera(glm::vec3(0.0f, 0.0f, 3.0f));
@@ -195,6 +205,9 @@ int main(){
         render_planets(&ourShader);
         render_moons(&ourShader);
 
+        // Passando o tempo do jogo
+        passingTime();
+
         // glfw: swap buffers and poll IO events (keys pressed/released, mouse moved etc.)
         // -------------------------------------------------------------------------------
         glfwSwapBuffers(window);
@@ -213,25 +226,63 @@ void processInput(GLFWwindow *window){
     if (glfwGetKey(window, GLFW_KEY_ESCAPE) == GLFW_PRESS){
         glfwSetWindowShouldClose(window, true);
         return;
-    }
+    }//if
 
     // Troca do tipo de câmera
     if (glfwGetKey(window, GLFW_KEY_1) == GLFW_PRESS){
         mode = 1;
+        info();
         return;
-    }
+    }//if
     if (glfwGetKey(window, GLFW_KEY_2) == GLFW_PRESS){
         mode = 2;
+        Planet::worldSpeed = 1;
+        info();
         return;
-    }
+    }//if
     if (glfwGetKey(window, GLFW_KEY_3) == GLFW_PRESS){
         mode = 3;
+        info();
         return;
-    }
+    }//if
 
-    // Comandos do modo 1
-    if (mode == 1){
+    // Comandos que funcionam no modo 1 e no modo 2
+    if (mode == 1 or mode == 2){
+        
+        // Comando para pausar o jogo
+        if (glfwGetKey(window, GLFW_KEY_P) == GLFW_PRESS){
+            if(processButton())
+                return;
 
+            pauseGame();
+            return;
+        }//if
+
+        // Acelera o mundo
+        if (glfwGetKey(window, GLFW_KEY_M) == GLFW_PRESS){
+            if(processButton())
+                return;
+
+            Planet::worldSpeed++;
+            if(Planet::worldSpeed > 20)
+                Planet::worldSpeed = 20;
+
+            if(mode == 2 and Planet::worldSpeed > 3)
+                Planet::worldSpeed = 3;
+
+            return;
+        }//if
+        // Desacelera o mundo
+        if (glfwGetKey(window, GLFW_KEY_N) == GLFW_PRESS){
+            if(processButton())
+                return;
+
+            Planet::worldSpeed--;
+            if(Planet::worldSpeed < 1)
+                Planet::worldSpeed = 1;
+
+            return;
+        }//if
     }//if
 
     // Comandos do modo 2
@@ -242,17 +293,9 @@ void processInput(GLFWwindow *window){
             if(processButton())
                 return;
 
-            Planet::plane = true;
+            Planet::plane = not Planet::plane;
+            return;
         }//if
-
-        // Easter Egg - Desativa Terra Plana
-        if (glfwGetKey(window, GLFW_KEY_R) == GLFW_PRESS){
-            if(processButton())
-                return;
-
-            Planet::plane = false;
-        }//if
-
 
         // Troca de Planetas
         if (glfwGetKey(window, GLFW_KEY_LEFT) == GLFW_PRESS){
@@ -304,11 +347,12 @@ void processInput(GLFWwindow *window){
                 return;
             }//if
         }//if
-
     }//if
 
     // Comandos do modo 3
     if (mode == 3){
+
+        Planet::worldSpeed = 1;
 
         // Movimentação da Nave
         if (glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS){
@@ -448,7 +492,7 @@ void allocate_moons(){
 
     // Luas da Terra
     Model moon_model(FileSystem::getPath("resources/objects/Moons/Earth/Moon/moon.obj"));
-    Moon moon("Moon", 12756/4, 1, 0.5, 0.07, &get<0>(planets.planet[2]));
+    Moon moon("Moon", 12756/4, 1.0, Planet::days, 0.07, &get<0>(planets.planet[2]));
     moons.moon.push_back(tuple<Moon, Model>(moon, moon_model));
     moons.qt++;
 
@@ -548,7 +592,7 @@ void render_sun(Shader *ourShader){
 // Renderiza os Planetas
 void render_planets(Shader *ourShader){
     for(int i = 0; i < planets.qt; i++){
-        ourShader->setMat4("model", get<0>(planets.planet[i]).render(glfwGetTime()));
+        ourShader->setMat4("model", get<0>(planets.planet[i]).render());
         get<1>(planets.planet[i]).Draw(*ourShader);
     }
 }//render_planets
@@ -556,7 +600,7 @@ void render_planets(Shader *ourShader){
 // Renderiza as luas
 void render_moons(Shader *ourShader){
     for(int i = 0; i < moons.qt; i++){
-        ourShader->setMat4("model", get<0>(moons.moon[i]).render(glfwGetTime()));
+        ourShader->setMat4("model", get<0>(moons.moon[i]).render());
         get<1>(moons.moon[i]).Draw(*ourShader);
     }
 }//render_moons
@@ -776,4 +820,84 @@ void initialize(){
 
     // Velocidade da nave
     ship.speed = 3;
+
+    // Imprime as informações
+    info();
 }//initialize
+
+// Pausa o mundo
+void pauseGame(){
+    // Modifica o estado do Pause
+    Planet::pause = not Planet::pause;
+}//pauseGame
+
+// Função para passar o tempo
+void passingTime(){
+    if (not Planet::pause)
+        Planet::time += deltaTime * Planet::worldSpeed; 
+}//passingTime
+
+// Imprime as informações necessárias
+void info(){
+    switch(mode){
+        case 1: info_mode_1(); break;
+        case 2: info_mode_2(); break;
+        case 3: info_mode_3(); break;
+    }//switch
+}//info
+
+// Imprime as informações do modo 1
+void info_mode_1(){
+
+    for(int i = 0; i < 40; i++)
+        cout << endl;
+
+    cout << "---------- MODO 1 ----------" << endl;
+    cout << "------- VISÃO GLOBAL -------" << endl;
+    cout << "--------- COMANDOS ---------" << endl;
+    cout << "----------------------------" << endl;
+    cout << "-        PAUSA => P         " << endl;
+    cout << "- AUMENTAR A VELOCIDADE => M" << endl;
+    cout << "- DIMINUIR A VELOCIDADE => N" << endl;
+    cout << "----------------------------" << endl;
+    cout << "- TROCAR DE MODO => 1,2,3   " << endl;
+    cout << "- FECHAR APLICAÇÃO => ESC   " << endl;
+}//info_mode_1
+
+// Imprime as informações do modo 2
+void info_mode_2(){
+    for(int i = 0; i < 40; i++)
+        cout << endl;
+
+    cout << "---------- MODO 2 ------------" << endl;
+    cout << "----- VISÃO ESPECÍFICA -------" << endl;
+    cout << "--------- COMANDOS -----------" << endl;
+    cout << "------------------------------" << endl;
+    cout << "-        PAUSA => P           " << endl;
+    cout << "- AUMENTAR A VELOCIDADE => M  " << endl;
+    cout << "- DIMINUIR A VELOCIDADE => N  " << endl;
+    cout << "- TROCAR PLANETA => LEFT,RIGHT" << endl;
+    cout << "- TROCAR LUAS => UP, DOWN     " << endl;
+    cout << "------------------------------" << endl;
+    cout << "- TROCAR DE MODO => 1,2,3     " << endl;
+    cout << "- FECHAR APLICAÇÃO => ESC     " << endl;
+}//info_mode_2
+
+// Imprime as informações do modo 3
+void info_mode_3(){
+
+    for(int i = 0; i < 40; i++)
+        cout << endl;
+
+    cout << "---------- MODO 3 -------------" << endl;
+    cout << "----- CONTROLE DA NAVE --------" << endl;
+    cout << "--------- COMANDOS ------------" << endl;
+    cout << "-------------------------------" << endl;
+    cout << "- MOVIMENTAÇÃO => W,A,S,D      " << endl;
+    cout << "- ROTAÇÃO => Q,E               " << endl;
+    cout << "- AUMENTAR A VELOCIDADE => UP  " << endl;
+    cout << "- DIMINUIR A VELOCIDADE -> DOWN" << endl;
+    cout << "-------------------------------" << endl;
+    cout << "- TROCAR DE MODO -> 1,2,3      " << endl;
+    cout << "- FECHAR APLICAÇÃO -> ESC      " << endl;
+}//info_mode_3
