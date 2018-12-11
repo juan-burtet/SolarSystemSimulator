@@ -26,7 +26,10 @@ class Planet: public Sun {
 		static float UA; // unidade astronomica, para distancia do sol
 		static float days; // days, para tempo de rotação
 		static float years; // anos, para o periodo orbital
-		static bool plane;
+		static bool plane; // Terra Plana
+		static int worldSpeed; // Velocidade do mundo
+		static bool pause; // O mundo está pausado
+		static float time; // tempo para quando estiver pausado
 
 		/** Construtor de um Planeta
 			* @param name - Nome do Planeta
@@ -44,9 +47,11 @@ class Planet: public Sun {
 			qtMoons = 0;
 		}
 
-		glm::mat4 render(float t){
+		glm::mat4 render(){
 			glm::mat4 matrix;
 			float x;
+			
+			float t = time;
 
 			// Calculo pro tempo de orbita
 			if(years* t_orbit != 0)
@@ -103,10 +108,12 @@ class Planet: public Sun {
 		}
 };
 
-float Planet::UA = 1;
-float Planet::days = 5;
-float Planet::years = 10;
-bool Planet::plane = false;
-
+float Planet::UA    	 = 1;
+float Planet::days  	 = 5;
+float Planet::years 	 = 10;
+bool  Planet::plane 	 = false;
+int   Planet::worldSpeed = 5;
+bool  Planet::pause 	 = false;
+float Planet::time 		 = glfwGetTime();
 
 #endif

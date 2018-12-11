@@ -22,9 +22,11 @@ class Moon: public Planet {
 			Origin = origin;
 		}
 
-		glm::mat4 render(float t){
+		glm::mat4 render(){
 			glm::mat4 matrix;
 			float x;
+
+			float t = time;
 
 			// Calculo pro tempo de orbita
 			if(years * t_orbit != 0)
