@@ -19,7 +19,6 @@
 
 // Original functions of the project
 void framebuffer_size_callback(GLFWwindow* window, int width, int height);
-void mouse_callback(GLFWwindow* window, double xpos, double ypos);
 void scroll_callback(GLFWwindow* window, double xoffset, double yoffset);
 void processInput(GLFWwindow *window);
 
@@ -44,7 +43,10 @@ glm::vec3 distance_vision(); // Distância da visão do planeta
 glm ::vec3 getMoonPosition(); // Posição da lua
 float getMoonScale(); // Scale da lua
 glm::vec3 shipPosition(); // Posição da nave
-glm::vec3 camPosition(); // Posição da câmera
+glm::vec3 camPosition(); // Posição da Câmera
+void updateCameraOnShip(); // Atualiza a câmera da Nave
+glm::vec3 rightFromShip(); // Retorna o Right da nave
+glm::mat4 checkShip(); // Checa se a nave não está saindo do mundo
 
 // Função do Botão
 bool processButton(); // Apertou um botão
@@ -98,7 +100,8 @@ Vision vision;
 // Struct da nave
 typedef struct{
     vector<tuple<Model, glm::mat4>> ship;
-    glm::mat4 cam;
+    float scale;
+    float speed;
 }Ship;
 Ship ship;
 
@@ -132,7 +135,6 @@ int main(){
     }
     glfwMakeContextCurrent(window);
     glfwSetFramebufferSizeCallback(window, framebuffer_size_callback);
-    glfwSetCursorPosCallback(window, mouse_callback);
     glfwSetScrollCallback(window, scroll_callback);
 
     // tell GLFW to capture our mouse
@@ -235,6 +237,23 @@ void processInput(GLFWwindow *window){
     // Comandos do modo 2
     if (mode == 2){
 
+        // Easter Egg - Terra Plana
+        if (glfwGetKey(window, GLFW_KEY_T) == GLFW_PRESS){
+            if(processButton())
+                return;
+
+            Planet::plane = true;
+        }//if
+
+        // Easter Egg - Desativa Terra Plana
+        if (glfwGetKey(window, GLFW_KEY_R) == GLFW_PRESS){
+            if(processButton())
+                return;
+
+            Planet::plane = false;
+        }//if
+
+
         // Troca de Planetas
         if (glfwGetKey(window, GLFW_KEY_LEFT) == GLFW_PRESS){
             if(processButton())
@@ -291,28 +310,50 @@ void processInput(GLFWwindow *window){
     // Comandos do modo 3
     if (mode == 3){
 
-        float scale = 0.0001f;
-        glm::vec3 x = camPosition() - shipPosition();
-
         // Movimentação da Nave
-        if (glfwGetKey(window, GLFW_KEY_RIGHT) == GLFW_PRESS){
+        if (glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS){
             get<1>(ship.ship[0]) = glm::rotate(get<1>(ship.ship[0]), glm::radians(90.0f) * -deltaTime, glm::vec3(0.0f, 1.0f, 0.0f));
-            ship.cam = glm::translate(ship.cam, scale * x);
-            //ship.cam = glm::rotate(ship.cam, glm::radians(90.0f) * deltaTime , glm::vec3(0.0f, 1.0f, 0.0f));
-            ship.cam = glm::translate(ship.cam, scale * -x);
-
+            updateCameraOnShip();
         }//if
-        if (glfwGetKey(window, GLFW_KEY_LEFT) == GLFW_PRESS){
+        if (glfwGetKey(window, GLFW_KEY_A) == GLFW_PRESS){
             get<1>(ship.ship[0]) = glm::rotate(get<1>(ship.ship[0]), glm::radians(90.0f) * deltaTime, glm::vec3(0.0f, 1.0f, 0.0f));
-            ship.cam = glm::rotate(ship.cam, glm::radians(90.0f) * -deltaTime, glm::vec3(0.0f, 1.0f, 0.0f));
+            updateCameraOnShip();
         }//if
-        if (glfwGetKey(window, GLFW_KEY_UP) == GLFW_PRESS){
+        if (glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS){
             get<1>(ship.ship[0]) = glm::rotate(get<1>(ship.ship[0]), glm::radians(90.0f) * deltaTime, glm::vec3(1.0f, 0.0f, 0.0f));
-            ship.cam = glm::rotate(ship.cam, glm::radians(90.0f) * -deltaTime , glm::vec3(1.0f, 0.0f, 0.0f));
+            updateCameraOnShip();
+        }//if
+        if (glfwGetKey(window, GLFW_KEY_S) == GLFW_PRESS){
+            get<1>(ship.ship[0]) = glm::rotate(get<1>(ship.ship[0]), glm::radians(90.0f) * -deltaTime, glm::vec3(1.0f, 0.0f, 0.0f));
+            updateCameraOnShip();
+        }//if
+        if (glfwGetKey(window, GLFW_KEY_Q) == GLFW_PRESS){
+            get<1>(ship.ship[0]) = glm::rotate(get<1>(ship.ship[0]), glm::radians(90.0f) * -deltaTime, glm::vec3(0.0f, 0.0f, 1.0f));
+            updateCameraOnShip();
+        }//if
+        if (glfwGetKey(window, GLFW_KEY_E) == GLFW_PRESS){
+            get<1>(ship.ship[0]) = glm::rotate(get<1>(ship.ship[0]), glm::radians(90.0f) * deltaTime, glm::vec3(0.0f, 0.0f, 1.0f));
+            updateCameraOnShip();
+        }//if
+
+        // Velocidade da Nave
+        if (glfwGetKey(window, GLFW_KEY_UP) == GLFW_PRESS){
+            if(processButton())
+                return;
+
+            ship.speed++;
+            if(ship.speed > 10)
+                ship.speed = 10;
+            return;
         }//if
         if (glfwGetKey(window, GLFW_KEY_DOWN) == GLFW_PRESS){
-            get<1>(ship.ship[0]) = glm::rotate(get<1>(ship.ship[0]), glm::radians(90.0f) * -deltaTime, glm::vec3(1.0f, 0.0f, 0.0f));
-            ship.cam = glm::rotate(ship.cam, glm::radians(90.0f) * deltaTime, glm::vec3(1.0f, 0.0f, 0.0f));
+            if(processButton())
+                return;
+
+            ship.speed--;
+            if(ship.speed < 3)
+                ship.speed = 3;
+            return;
         }//if
     }//if
 
@@ -325,24 +366,6 @@ void framebuffer_size_callback(GLFWwindow* window, int width, int height){
     // height will be significantly larger than specified on retina displays.
     glViewport(0, 0, width, height);
 }//framebuffer_size_callback
-
-// glfw: whenever the mouse moves, this callback is called
-void mouse_callback(GLFWwindow* window, double xpos, double ypos){
-    if (firstMouse)
-    {
-        lastX = xpos;
-        lastY = ypos;
-        firstMouse = false;
-    }
-
-    float xoffset = xpos - lastX;
-    float yoffset = lastY - ypos; // reversed since y-coordinates go from bottom to top
-
-    lastX = xpos;
-    lastY = ypos;
-
-    camera.ProcessMouseMovement(xoffset, yoffset);
-}//mouse_callback
 
 // glfw: whenever the mouse scroll wheel scrolls, this callback is called
 void scroll_callback(GLFWwindow* window, double xoffset, double yoffset){
@@ -502,9 +525,7 @@ void allocate_ship(){
     matrix = glm::rotate(matrix, glm::radians(180.0f), glm::vec3(0.0f, 1.0f, 0.0f));
     matrix = glm::scale(matrix, 0.0001f * glm::vec3(1.0f, 1.0f, 1.0f));
     ship.ship.push_back(tuple<Model,glm::mat4>(model_ship, matrix));
-    
-    // inicializa a camera
-    ship.cam = camera.GetViewMatrix();
+    ship.scale = 1/0.0001f;
 }//allocate_ship
 
 // Renderiza as estrelas
@@ -586,17 +607,14 @@ void pick_vision(Shader *ourShader){
 
 // Utiliza a câmera da nave
 void ship_vision(Shader *ourShader){
-    glm::vec3 x;
-    float scale;
-    x = glm::vec3(0.0f, 0.0f, 1000.0f);
-    scale = 0.0001f;
+    
+    // Movimenta a nave
+    get<1>(ship.ship[0]) = checkShip();
 
-    get<1>(ship.ship[0]) = glm::translate(get<1>(ship.ship[0]), deltaTime * x);
-    ship.cam = glm::translate(ship.cam, scale * deltaTime * x);
-
+    // Atualiza a câmera
     glm::mat4 projection = glm::perspective(glm::radians(camera.Zoom), (float)SCR_WIDTH / (float)SCR_HEIGHT, 0.01f, 1000.0f);
-    glm::mat4 view = ship.cam;
-
+    updateCameraOnShip();
+    glm::mat4 view = camera.GetViewMatrix();
     ourShader->setMat4("projection", projection);
     ourShader->setMat4("view", view);
     render_ship(ourShader);
@@ -660,15 +678,65 @@ glm::vec3 shipPosition(){
 
 // Retorna a posição da câmera
 glm::vec3 camPosition(){
-    glm::mat4 matrix = ship.cam;
-    glm::vec3 position;
+    glm::mat4 aux;
+    glm::vec3 dist;
 
-    position.x = matrix[3][0];
-    position.y = matrix[3][1];
-    position.z = matrix[3][2];
+    aux = glm::translate(get<1>(ship.ship[0]), ship.scale * glm::vec3(0.0f, 0.020f, -0.11f));
+    dist.x = aux[3][0];
+    dist.y = aux[3][1];
+    dist.z = aux[3][2];
 
-    return position; 
+    return dist;
 }//camPosition
+
+// Retorna o right da nave
+glm::vec3 rightFromShip(){
+    glm::mat4 aux;
+    glm::vec3 dist;
+
+    aux = glm::translate(get<1>(ship.ship[0]), ship.scale * glm::vec3(1.0f, 0.0f, 0.0f));
+    dist.x = aux[3][0];
+    dist.y = aux[3][1];
+    dist.z = aux[3][2];
+
+    return shipPosition() - dist;
+}//rightFromShip
+
+// Atualiza a câmera da nave
+void updateCameraOnShip(){
+    camera.Position = camPosition();
+    camera.Front    = glm::normalize(shipPosition() - camera.Position);
+    camera.Right    = glm::normalize(rightFromShip());
+    camera.Up       = glm::normalize(glm::cross(camera.Right, camera.Front));
+}//updateCameraOnShip
+
+// Verifica se a nave pode se movimentar
+glm::mat4 checkShip(){
+    glm::vec3 x;
+    glm::mat4 aux;
+    
+    // Usados pra movimentar a nave
+    x = glm::vec3(0.0f, 0.0f, 1000.0f);
+
+    // Movimenta a nave
+    aux = glm::translate(get<1>(ship.ship[0]), deltaTime * (x * ship.speed));
+
+    // posição da nave
+    x.x = aux[3][0];
+    x.y = aux[3][1];
+    x.z = aux[3][2];
+
+    // Se tiver muito a cima ou muito abaixo, não pode movimentar
+    if(abs(x.y) > 2.0f)
+        return get<1>(ship.ship[0]);
+
+    // Se tiver uma distância muito grande do centro, não se movimenta
+    if(glm::length(x) > 8.0f)
+        return get<1>(ship.ship[0]);
+
+    // pode se movimentar
+    return aux;
+}//checkShip
 
 // Aperta o botão
 bool processButton(){
@@ -705,4 +773,7 @@ void initialize(){
 
     // Botão não apertado
     button = false;
+
+    // Velocidade da nave
+    ship.speed = 3;
 }//initialize
