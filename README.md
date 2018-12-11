@@ -4,10 +4,10 @@
 
 - [x] Todos os planetas rotacionando em volta do Sol;
 - [x] Luas dos Planetas rotacionando em volta dos seus respectivos planetas;
-- [x] Podendo modificar a velocidade que o Mundo se movimenta:
-	- [x] Diminuir a velocidade;
-	- [x] Aumentar a velocidade;
-	- [x] Pausar todos os movimentos do mundo;
+- [ ] Podendo modificar a velocidade que o Mundo se movimenta:
+	- [ ] Diminuir a velocidade;
+	- [ ] Aumentar a velocidade;
+	- [ ] Pausar todos os movimentos do mundo;
 - [x] Multiplas câmeras:
 	- [x] Câmera com a visão geral do Sistema Solar, podendo ver todos os planetas e suas luas em movimento;
 	- [x] Câmera pode dar foco em um planeta especifico, observando tal planeta (ou lua) enquanto se movimenta com o planeta;
