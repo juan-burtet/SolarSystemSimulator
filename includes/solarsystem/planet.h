@@ -26,6 +26,7 @@ class Planet: public Sun {
 		static float UA; // unidade astronomica, para distancia do sol
 		static float days; // days, para tempo de rotação
 		static float years; // anos, para o periodo orbital
+		static bool plane;
 
 		/** Construtor de um Planeta
 			* @param name - Nome do Planeta
@@ -78,6 +79,9 @@ class Planet: public Sun {
 			position.y = matrix[3][1];
 			position.z = matrix[3][2]; 
 
+			if(plane && (Name == "Earth"))
+				matrix = glm::scale(matrix, glm::vec3(1.0f, 0.1f, 1.0f));
+
 			// retorna a matriz
 			return matrix;
 		}
@@ -102,6 +106,7 @@ class Planet: public Sun {
 float Planet::UA = 1;
 float Planet::days = 5;
 float Planet::years = 10;
+bool Planet::plane = false;
 
 
 #endif
