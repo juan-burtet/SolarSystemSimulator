@@ -1,5 +1,27 @@
 # SolarSystemSimulator
 
+## Planets and Satellites
+
+- Mercury
+- Venus
+- Earth
+	- Moon
+- Mars
+- Jupiter
+	- Io
+	- Europa
+	- Ganymede
+	- Callisto
+- Saturn
+	- Titan
+- Uranus
+	- Ariel
+	- Umbriel
+	- Titania
+	- Oberon
+- Neptune
+	- Triton
+
 ## TODO
 
 - [x] Todos os planetas rotacionando em volta do Sol;
